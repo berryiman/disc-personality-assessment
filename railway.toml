@@ -2,7 +2,7 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "streamlit run disc_style.py --server.port $PORT --server.address 0.0.0.0"
+startCommand = "python main.py"
 healthcheckPath = "/"
 healthcheckTimeout = 300
 restartPolicyType = "never"
