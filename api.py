@@ -8,10 +8,15 @@ import numpy as np
 import math
 from datetime import datetime
 import uuid
+import os
+import psycopg2
+from psycopg2.extras import RealDictCursor
+import psycopg2.pool
+from contextlib import contextmanager
 
 app = FastAPI(
-    title="DISC Assessment API - Berdasarkan Kode Asli",
-    description="API yang menggunakan logika EXACT dari disc_style.py",
+    title="DISC Assessment API - Dengan PostgreSQL",
+    description="API yang menggunakan logika EXACT dari disc_style.py + PostgreSQL storage",
     version="1.0.0"
 )
 
@@ -23,6 +28,72 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# PostgreSQL Connection
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    # Fallback untuk development
+    DATABASE_URL = "postgresql://user:password@localhost:5432/dbname"
+
+# Connection pool
+connection_pool = None
+
+def init_connection_pool():
+    global connection_pool
+    try:
+        connection_pool = psycopg2.pool.SimpleConnectionPool(
+            1, 20,  # min dan max connections
+            DATABASE_URL
+        )
+        print("PostgreSQL connection pool created successfully")
+    except Exception as e:
+        print(f"Error creating connection pool: {e}")
+        connection_pool = None
+
+@contextmanager
+def get_db_connection():
+    if connection_pool is None:
+        raise HTTPException(status_code=503, detail="Database connection not available")
+    
+    conn = connection_pool.getconn()
+    try:
+        yield conn
+    finally:
+        connection_pool.putconn(conn)
+
+def create_tables():
+    """Create tables if they don't exist"""
+    create_table_sql = """
+    CREATE TABLE IF NOT EXISTS disc_assessments (
+        id SERIAL PRIMARY KEY,
+        assessment_id VARCHAR(50) UNIQUE NOT NULL,
+        candidate_name VARCHAR(255) NOT NULL,
+        candidate_email VARCHAR(255) NOT NULL,
+        position VARCHAR(255),
+        raw_scores JSONB NOT NULL,
+        normalized_scores JSONB NOT NULL,
+        relative_percentages JSONB NOT NULL,
+        resultant_angle FLOAT NOT NULL,
+        resultant_magnitude FLOAT NOT NULL,
+        primary_style VARCHAR(10) NOT NULL,
+        style_description TEXT,
+        questions_used JSONB,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    
+    CREATE INDEX IF NOT EXISTS idx_assessment_id ON disc_assessments(assessment_id);
+    CREATE INDEX IF NOT EXISTS idx_candidate_email ON disc_assessments(candidate_email);
+    CREATE INDEX IF NOT EXISTS idx_created_at ON disc_assessments(created_at);
+    """
+    
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(create_table_sql)
+                conn.commit()
+        print("Database tables created successfully")
+    except Exception as e:
+        print(f"Error creating tables: {e}")
 
 # Pydantic models
 class DISCAnswer(BaseModel):
@@ -48,10 +119,7 @@ class DISCResult(BaseModel):
     resultant_magnitude: float
     primary_style: str
     style_description: str
-    questions_used: List[Dict[str, Any]]
-
-# Storage
-assessments_db = {}
+    questions_used: Optional[List[Dict[str, Any]]] = None
 
 # Load data files - EXACT sama seperti di aplikasi asli
 def load_questions():
@@ -60,15 +128,7 @@ def load_questions():
         with open("questions.json", "r") as f:
             return json.load(f)
     except FileNotFoundError:
-        # Fallback data for testing
-        return [
-            {
-                "style": "D",
-                "question": "I thrive in fast-paced environments where I can take charge and make decisions quickly.",
-                "mapping": {"D": 2, "I": 1, "S": -1, "C": 0}
-            }
-            # ... more questions would be loaded from file
-        ]
+        return []
 
 def load_disc_descriptions():
     """Load DISC descriptions exactly as in original app"""
@@ -82,10 +142,9 @@ def load_disc_descriptions():
 questions_data = load_questions()
 disc_descriptions = load_disc_descriptions()
 
+# EXACT functions dari disc_style.py (sama persis)
 def normalize_scores(scores, questions):
-    """
-    EXACT copy dari fungsi normalize_scores di disc_style.py
-    """
+    """EXACT copy dari fungsi normalize_scores di disc_style.py"""
     max_possible_scores = {style: 0.0 for style in ["D", "I", "S", "C"]}
     min_possible_scores = {style: 0.0 for style in ["D", "I", "S", "C"]}
 
@@ -93,44 +152,33 @@ def normalize_scores(scores, questions):
         for style in ["D", "I", "S", "C"]:
             mapping = q["mapping"][style]
             if mapping >= 0:
-                max_contribution = mapping * 2  # Max when (answer - 3) = +2
-                min_contribution = mapping * (-2)  # Min when (answer - 3) = -2
+                max_contribution = mapping * 2
+                min_contribution = mapping * (-2)
             else:
-                max_contribution = mapping * (-2)  # Max when (answer - 3) = -2
-                min_contribution = mapping * 2  # Min when (answer - 3) = +2
+                max_contribution = mapping * (-2)
+                min_contribution = mapping * 2
 
             max_possible_scores[style] += max_contribution
             min_possible_scores[style] += min_contribution
 
-    print(f"Max possible scores: {max_possible_scores}")
-    print(f"Min possible scores: {min_possible_scores}")
-
     normalized_scores = {}
     for style in ["D", "I", "S", "C"]:
-        # Ensure the raw score is within the possible range
         score = max(min(scores[style], max_possible_scores[style]), min_possible_scores[style])
         score_range = max_possible_scores[style] - min_possible_scores[style]
         if score_range == 0:
-            normalized_scores[style] = 50.0  # Neutral score if no variation is possible
+            normalized_scores[style] = 50.0
         else:
             normalized_scores[style] = ((score - min_possible_scores[style]) / score_range) * 100
-            # Ensure the normalized score is within 0 to 100
             normalized_scores[style] = max(0, min(normalized_scores[style], 100))
     return normalized_scores
 
 def calculate_resultant_vector(normalized_score):
-    """
-    EXACT copy dari logika vector calculation di disc_style.py
-    """
-    # Define the categories and their positions - EXACT sama
+    """EXACT copy dari logika vector calculation di disc_style.py"""
     categories = ["D", "I", "S", "C"]
-    # Angles for the styles - EXACT sama
     angles = [7 * np.pi / 4, np.pi / 4, 3 * np.pi / 4, 5 * np.pi / 4]
     
-    # Divide Each Normalized Score by 100 - EXACT sama
     scaled_scores = {style: score / 100 for style, score in normalized_score.items()}
 
-    # Compute x and y components of the style vectors - EXACT sama
     x_components = []
     y_components = []
     for style in categories:
@@ -139,54 +187,39 @@ def calculate_resultant_vector(normalized_score):
         x_components.append(magnitude * np.cos(angle))
         y_components.append(magnitude * np.sin(angle))
 
-    # Sum the components - EXACT sama
     total_x = sum(x_components)
     total_y = sum(y_components)
 
-    # Compute the resultant vector - EXACT sama
     resultant_magnitude = np.sqrt(total_x**2 + total_y**2)
     resultant_angle = np.arctan2(total_y, total_x)
     
     return resultant_angle, resultant_magnitude
 
 def determine_style_from_angle(resultant_angle):
-    """
-    EXACT copy dari describe_style function di disc_style.py
-    """
-    # Convert the resultant angle from radians to degrees - EXACT sama
+    """EXACT copy dari describe_style function di disc_style.py"""
     resultant_degrees = math.degrees(resultant_angle)
     if resultant_degrees < 0:
-        resultant_degrees += 360  # Convert negative angles to positive
+        resultant_degrees += 360
 
-    # Define the angular ranges - EXACT sama dengan disc_style.py
     style_ranges = {
-        # D (Dominance)
         "D": (315, 337.5),
         "DC": (270, 315),
-        "DI": (337.5, 360),  # Also covers the 0 degree point
-        
-        # I (Influence)
+        "DI": (337.5, 360),
         "I": (45, 67.5),
         "ID": (0, 45),
         "IS": (67.5, 90),
-        
-        # S (Steadiness)
         "S": (135, 157.5),
         "SI": (90, 135),
         "SC": (157.5, 180),
-        
-        # C (Conscientiousness)
         "C": (225, 247.5),
         "CS": (180, 225),
         "CD": (247.5, 270)
     }
 
-    # Determine which range the resultant angle falls into - EXACT sama
     for style, (start_angle, end_angle) in style_ranges.items():
         if start_angle <= resultant_degrees < end_angle or (start_angle == 337.5 and resultant_degrees == 0):
             return style
     
-    # Default fallback
     return "Balanced Style"
 
 def get_style_description(style):
@@ -196,16 +229,135 @@ def get_style_description(style):
         return f"{desc['title']}\n\n{desc['description']}\n\nStrengths: {desc['strengths']}\n\nChallenges: {desc['challenges']}"
     return "Balanced Style - Your responses indicate a balanced personality without a clear preference for any specific DISC style."
 
+# Database functions
+def save_assessment_to_db(result: DISCResult):
+    """Save assessment result to PostgreSQL"""
+    insert_sql = """
+    INSERT INTO disc_assessments (
+        assessment_id, candidate_name, candidate_email, position,
+        raw_scores, normalized_scores, relative_percentages,
+        resultant_angle, resultant_magnitude, primary_style,
+        style_description, questions_used
+    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """
+    
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(insert_sql, (
+                    result.assessment_id,
+                    result.candidate_name,
+                    result.candidate_email,
+                    result.position,
+                    json.dumps(result.raw_scores),
+                    json.dumps(result.normalized_scores),
+                    json.dumps(result.relative_percentages),
+                    result.resultant_angle,
+                    result.resultant_magnitude,
+                    result.primary_style,
+                    result.style_description,
+                    json.dumps(result.questions_used) if result.questions_used else None
+                ))
+                conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error saving to database: {e}")
+        return False
+
+def get_assessment_from_db(assessment_id: str):
+    """Get assessment by ID from PostgreSQL"""
+    select_sql = """
+    SELECT assessment_id, candidate_name, candidate_email, position,
+           raw_scores, normalized_scores, relative_percentages,
+           resultant_angle, resultant_magnitude, primary_style,
+           style_description, questions_used, created_at
+    FROM disc_assessments 
+    WHERE assessment_id = %s
+    """
+    
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(select_sql, (assessment_id,))
+                row = cur.fetchone()
+                if row:
+                    return dict(row)
+        return None
+    except Exception as e:
+        print(f"Error getting from database: {e}")
+        return None
+
+def get_assessments_by_email_from_db(email: str):
+    """Get assessments by email from PostgreSQL"""
+    select_sql = """
+    SELECT assessment_id, candidate_name, candidate_email, position,
+           raw_scores, normalized_scores, relative_percentages,
+           resultant_angle, resultant_magnitude, primary_style,
+           style_description, created_at
+    FROM disc_assessments 
+    WHERE candidate_email = %s
+    ORDER BY created_at DESC
+    """
+    
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(select_sql, (email,))
+                rows = cur.fetchall()
+                return [dict(row) for row in rows]
+        return []
+    except Exception as e:
+        print(f"Error getting assessments by email: {e}")
+        return []
+
+def get_all_assessments_from_db(limit: int = 50, offset: int = 0):
+    """Get all assessments with pagination from PostgreSQL"""
+    select_sql = """
+    SELECT assessment_id, candidate_name, candidate_email, position,
+           raw_scores, normalized_scores, relative_percentages,
+           resultant_angle, resultant_magnitude, primary_style,
+           style_description, created_at
+    FROM disc_assessments 
+    ORDER BY created_at DESC
+    LIMIT %s OFFSET %s
+    """
+    
+    count_sql = "SELECT COUNT(*) FROM disc_assessments"
+    
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(select_sql, (limit, offset))
+                rows = cur.fetchall()
+                
+                cur.execute(count_sql)
+                total = cur.fetchone()['count']
+                
+                return [dict(row) for row in rows], total
+        return [], 0
+    except Exception as e:
+        print(f"Error getting all assessments: {e}")
+        return [], 0
+
+# API Endpoints
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database on startup"""
+    init_connection_pool()
+    create_tables()
+
 @app.get("/")
 async def root():
     return {
-        "message": "DISC Assessment API - Menggunakan Logika Exact dari disc_style.py",
+        "message": "DISC Assessment API - Dengan PostgreSQL Storage",
         "version": "1.0.0",
         "questions_loaded": len(questions_data),
+        "database": "PostgreSQL" if connection_pool else "Not Connected",
         "endpoints": {
             "submit_assessment": "/api/v1/assessment/submit",
             "get_result": "/api/v1/assessment/{assessment_id}",
             "list_assessments": "/api/v1/assessments",
+            "get_by_email": "/api/v1/assessments/by-email/{email}",
             "get_questions": "/api/v1/questions",
             "health": "/health"
         }
@@ -213,22 +365,23 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
+    db_status = "connected" if connection_pool else "disconnected"
+    return {
+        "status": "healthy", 
+        "timestamp": datetime.now().isoformat(),
+        "database": db_status
+    }
 
 @app.get("/api/v1/questions")
 async def get_random_questions(count: int = 30):
-    """
-    Get random questions exactly like the original app
-    """
+    """Get random questions exactly like the original app"""
     if count > len(questions_data):
         count = len(questions_data)
     
-    # Random shuffle dan ambil 30 questions - EXACT sama dengan aplikasi asli
     shuffled_questions = questions_data.copy()
     random.shuffle(shuffled_questions)
     selected_questions = shuffled_questions[:count]
     
-    # Add question IDs for API usage
     for i, q in enumerate(selected_questions):
         q["question_id"] = i
     
@@ -248,25 +401,19 @@ async def get_random_questions(count: int = 30):
 
 @app.post("/api/v1/assessment/submit", response_model=DISCResult)
 async def submit_assessment(request: DISCAssessmentRequest):
-    """
-    Process DISC assessment menggunakan EXACT algoritma dari disc_style.py
-    """
+    """Process DISC assessment dan simpan ke PostgreSQL"""
     try:
         assessment_id = str(uuid.uuid4())
         
-        # Validate answers count
         if len(request.answers) < 20:
             raise HTTPException(status_code=400, detail="Minimum 20 answers required")
         
-        # Get random questions untuk assessment ini (simulate original app behavior)
         shuffled_questions = questions_data.copy()
         random.shuffle(shuffled_questions)
         selected_questions = shuffled_questions[:len(request.answers)]
         
-        # Initialize scores - EXACT sama dengan disc_style.py
         raw_scores = {"D": 0, "I": 0, "S": 0, "C": 0}
         
-        # Calculate raw scores - EXACT algoritma dari disc_style.py
         for i, answer_data in enumerate(request.answers):
             if i >= len(selected_questions):
                 break
@@ -274,17 +421,11 @@ async def submit_assessment(request: DISCAssessmentRequest):
             q = selected_questions[i]
             answer = answer_data.answer
             
-            # EXACT scoring logic dari disc_style.py
             for style in ["D", "I", "S", "C"]:
                 raw_scores[style] += q["mapping"][style] * (answer - 3)
         
-        print(f'Raw scores: {raw_scores}')
-        
-        # Normalize scores - menggunakan fungsi EXACT dari disc_style.py
         normalized_scores = normalize_scores(raw_scores, selected_questions)
-        print(f'Normalized scores: {normalized_scores}')
         
-        # Calculate relative percentages - EXACT dari disc_style.py
         total_normalized = sum(normalized_scores.values())
         relative_percentages = {}
         for style, score in normalized_scores.items():
@@ -293,16 +434,10 @@ async def submit_assessment(request: DISCAssessmentRequest):
             else:
                 relative_percentages[style] = (score / total_normalized) * 100
         
-        # Calculate resultant vector - EXACT dari disc_style.py
         resultant_angle, resultant_magnitude = calculate_resultant_vector(normalized_scores)
-        
-        # Determine primary style - EXACT dari disc_style.py
         primary_style = determine_style_from_angle(resultant_angle)
-        
-        # Get style description
         style_description = get_style_description(primary_style)
         
-        # Create result
         result = DISCResult(
             assessment_id=assessment_id,
             candidate_name=request.candidate_name,
@@ -319,8 +454,11 @@ async def submit_assessment(request: DISCAssessmentRequest):
             questions_used=selected_questions
         )
         
-        # Store in database
-        assessments_db[assessment_id] = result.dict()
+        # Save to PostgreSQL
+        if save_assessment_to_db(result):
+            print(f"Assessment {assessment_id} saved to database")
+        else:
+            print(f"Failed to save assessment {assessment_id} to database")
         
         return result
         
@@ -329,56 +467,48 @@ async def submit_assessment(request: DISCAssessmentRequest):
 
 @app.get("/api/v1/assessment/{assessment_id}", response_model=DISCResult)
 async def get_assessment_result(assessment_id: str):
-    """Get assessment result by ID"""
-    if assessment_id not in assessments_db:
+    """Get assessment result by ID dari PostgreSQL"""
+    row = get_assessment_from_db(assessment_id)
+    if not row:
         raise HTTPException(status_code=404, detail="Assessment not found")
     
-    return DISCResult(**assessments_db[assessment_id])
+    return DISCResult(
+        assessment_id=row['assessment_id'],
+        candidate_name=row['candidate_name'],
+        candidate_email=row['candidate_email'],
+        position=row['position'],
+        timestamp=row['created_at'].isoformat(),
+        raw_scores=row['raw_scores'],
+        normalized_scores=row['normalized_scores'],
+        relative_percentages=row['relative_percentages'],
+        resultant_angle=row['resultant_angle'],
+        resultant_magnitude=row['resultant_magnitude'],
+        primary_style=row['primary_style'],
+        style_description=row['style_description'],
+        questions_used=row['questions_used']
+    )
 
 @app.get("/api/v1/assessments")
 async def list_assessments(limit: int = 50, offset: int = 0):
-    """List all assessments with pagination"""
-    all_assessments = list(assessments_db.values())
-    total = len(all_assessments)
-    
-    start = offset
-    end = offset + limit
-    paginated_assessments = all_assessments[start:end]
+    """List all assessments with pagination dari PostgreSQL"""
+    assessments, total = get_all_assessments_from_db(limit, offset)
     
     return {
         "total": total,
         "limit": limit,
         "offset": offset,
-        "assessments": paginated_assessments
+        "assessments": assessments
     }
 
 @app.get("/api/v1/assessments/by-email/{email}")
 async def get_assessments_by_email(email: str):
-    """Get all assessments for a specific email"""
-    user_assessments = [
-        assessment for assessment in assessments_db.values()
-        if assessment["candidate_email"] == email
-    ]
+    """Get all assessments for a specific email dari PostgreSQL"""
+    assessments = get_assessments_by_email_from_db(email)
     
-    if not user_assessments:
+    if not assessments:
         raise HTTPException(status_code=404, detail="No assessments found for this email")
     
-    return {"email": email, "assessments": user_assessments}
-
-@app.get("/api/v1/debug/compare-with-streamlit")
-async def debug_comparison():
-    """Helper untuk debug - bandingkan hasil dengan Streamlit app"""
-    return {
-        "message": "Untuk memastikan hasil sama dengan Streamlit app:",
-        "steps": [
-            "1. Jalankan assessment yang sama di Streamlit app",
-            "2. Gunakan questions yang sama (gunakan endpoint /api/v1/questions)", 
-            "3. Submit answers yang sama ke API",
-            "4. Bandingkan raw_scores, normalized_scores, dan primary_style",
-            "5. Jika ada perbedaan, periksa mapping questions atau logic scoring"
-        ],
-        "note": "API ini menggunakan EXACT algoritma dari disc_style.py"
-    }
+    return {"email": email, "assessments": assessments}
 
 if __name__ == "__main__":
     import uvicorn
