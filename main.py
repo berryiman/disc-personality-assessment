@@ -9,15 +9,15 @@ if __name__ == "__main__":
     print(f"Starting service: {service_type} on port {port}")
     
     if service_type == "api":
-        # Run FastAPI with IPv6 binding for Railway private network
+        # Run FastAPI with IPv4 binding (for external access)
         import uvicorn
         from api import app
-        uvicorn.run(app, host="::", port=port)  # ← IPv6 binding
+        uvicorn.run(app, host="0.0.0.0", port=port)
     else:
-        # Run Streamlit (default)
+        # Run Streamlit with IPv4 binding (for external access)
         subprocess.run([
             sys.executable, "-m", "streamlit", "run", "disc_style.py",
             "--server.port", str(port),
-            "--server.address", "::",  # ← IPv6 binding juga
+            "--server.address", "0.0.0.0",  # ← IPv4 untuk external access
             "--server.headless", "true"
         ])
