@@ -1,10 +1,31 @@
-streamlit
-numpy==1.26.4
-matplotlib
-reportlab
-Pillow
+# Core web framework
 fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
 pydantic>=2.5.0
 python-multipart>=0.0.6
+
+# Database
 psycopg2-binary>=2.9.0
+
+# Data processing
+numpy>=1.24.0,<2.0.0
+
+# Streamlit (if needed)
+streamlit>=1.28.0
+
+# Data visualization
+matplotlib>=3.7.0
+plotly>=5.15.0
+
+# PDF generation
+reportlab>=4.0.0
+
+# Image processing
+Pillow>=10.0.0
+
+# Utilities
+python-dateutil>=2.8.0
+pytz>=2023.3
+
+# Development and debugging
+python-dotenv>=1.0.0
