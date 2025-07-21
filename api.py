@@ -13,7 +13,7 @@ import sys
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import psycopg2.pool
-from contextmanager import contextmanager
+from contextlib import contextmanager
 import logging
 
 # Setup logging
