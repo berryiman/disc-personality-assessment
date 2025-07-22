@@ -15,15 +15,18 @@ from psycopg2.extras import RealDictCursor
 import psycopg2.pool
 from contextlib import contextmanager
 import logging
+import requests
+import asyncio
+import aiohttp
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="DISC Assessment API - Railway PostgreSQL",
-    description="API yang menggunakan logika EXACT dari disc_style.py + PostgreSQL storage untuk Railway",
-    version="2.0.0"
+    title="DISC Assessment API - Railway PostgreSQL with n8n Webhook",
+    description="API yang menggunakan logika EXACT dari disc_style.py + PostgreSQL storage untuk Railway + n8n webhook integration",
+    version="2.1.0"
 )
 
 # Enable CORS untuk n8n dan external access
@@ -110,6 +113,20 @@ def get_ssl_mode():
     if is_production():
         return "require"
     return "prefer"
+
+# ================== WEBHOOK CONFIGURATION ==================
+
+def get_webhook_config():
+    """Get webhook configuration from environment variables"""
+    return {
+        "n8n_webhook_url": os.getenv("N8N_WEBHOOK_URL"),
+        "webhook_enabled": os.getenv("WEBHOOK_ENABLED", "false").lower() == "true",
+        "webhook_timeout": int(os.getenv("WEBHOOK_TIMEOUT", "30")),
+        "webhook_retry_attempts": int(os.getenv("WEBHOOK_RETRY_ATTEMPTS", "3")),
+        "webhook_secret": os.getenv("WEBHOOK_SECRET", "")
+    }
+
+webhook_config = get_webhook_config()
 
 # Initialize database configuration
 try:
@@ -278,11 +295,51 @@ def create_tables():
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
     
+    -- Table untuk n8n results tracking
+    CREATE TABLE IF NOT EXISTS disc_results_n8n (
+        id SERIAL PRIMARY KEY,
+        assessment_id VARCHAR(50) NOT NULL,
+        candidate_name VARCHAR(255) NOT NULL,
+        candidate_email VARCHAR(255) NOT NULL,
+        position VARCHAR(255),
+        primary_style VARCHAR(10) NOT NULL,
+        d_score FLOAT NOT NULL,
+        i_score FLOAT NOT NULL,
+        s_score FLOAT NOT NULL,
+        c_score FLOAT NOT NULL,
+        completed_at TIMESTAMP NOT NULL,
+        processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    
+    -- Table untuk webhook logs
+    CREATE TABLE IF NOT EXISTS webhook_logs (
+        id SERIAL PRIMARY KEY,
+        assessment_id VARCHAR(50),
+        webhook_url TEXT,
+        payload JSONB,
+        response_status INTEGER,
+        response_body TEXT,
+        error_message TEXT,
+        attempt_number INTEGER DEFAULT 1,
+        sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        success BOOLEAN DEFAULT FALSE
+    );
+    
     -- Indexes untuk performance
     CREATE INDEX IF NOT EXISTS idx_assessment_id ON disc_assessments(assessment_id);
     CREATE INDEX IF NOT EXISTS idx_candidate_email ON disc_assessments(candidate_email);
     CREATE INDEX IF NOT EXISTS idx_created_at ON disc_assessments(created_at);
     CREATE INDEX IF NOT EXISTS idx_primary_style ON disc_assessments(primary_style);
+    
+    CREATE INDEX IF NOT EXISTS idx_n8n_assessment_id ON disc_results_n8n(assessment_id);
+    CREATE INDEX IF NOT EXISTS idx_n8n_candidate_email ON disc_results_n8n(candidate_email);
+    CREATE INDEX IF NOT EXISTS idx_n8n_completed_at ON disc_results_n8n(completed_at);
+    CREATE INDEX IF NOT EXISTS idx_n8n_primary_style ON disc_results_n8n(primary_style);
+    
+    CREATE INDEX IF NOT EXISTS idx_webhook_logs_assessment_id ON webhook_logs(assessment_id);
+    CREATE INDEX IF NOT EXISTS idx_webhook_logs_success ON webhook_logs(success);
+    CREATE INDEX IF NOT EXISTS idx_webhook_logs_sent_at ON webhook_logs(sent_at);
     
     -- Trigger untuk updated_at
     CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -309,6 +366,242 @@ def create_tables():
         return True
     except Exception as e:
         logger.error(f"🚨 Error creating tables: {e}")
+        return False
+
+# ================== WEBHOOK FUNCTIONS ==================
+
+async def log_webhook_attempt(assessment_id: str, webhook_url: str, payload: dict, 
+                             response_status: int = None, response_body: str = None, 
+                             error_message: str = None, attempt_number: int = 1, 
+                             success: bool = False):
+    """Log webhook attempt to database for debugging"""
+    if not connection_pool:
+        return
+    
+    insert_sql = """
+    INSERT INTO webhook_logs (
+        assessment_id, webhook_url, payload, response_status, 
+        response_body, error_message, attempt_number, success
+    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+    """
+    
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(insert_sql, (
+                    assessment_id,
+                    webhook_url,
+                    json.dumps(payload),
+                    response_status,
+                    response_body[:1000] if response_body else None,  # Limit response body
+                    error_message[:500] if error_message else None,   # Limit error message
+                    attempt_number,
+                    success
+                ))
+                conn.commit()
+    except Exception as e:
+        logger.error(f"🚨 Error logging webhook attempt: {e}")
+
+async def send_webhook_to_n8n(assessment_data: dict, webhook_url: str = None):
+    """
+    Send assessment data to n8n webhook asynchronously dengan comprehensive logging
+    """
+    assessment_id = assessment_data.get("assessment_id", "unknown")
+    
+    if not webhook_config["webhook_enabled"]:
+        logger.info(f"📤 Webhook disabled for assessment {assessment_id}")
+        return True
+    
+    url = webhook_url or webhook_config["n8n_webhook_url"]
+    if not url:
+        logger.warning(f"⚠️ No webhook URL configured for assessment {assessment_id}")
+        return False
+    
+    # Prepare webhook payload
+    payload = {
+        "event_type": "disc_assessment_completed",
+        "timestamp": datetime.now().isoformat(),
+        "assessment_id": assessment_data.get("assessment_id"),
+        "candidate": {
+            "name": assessment_data.get("candidate_name"),
+            "email": assessment_data.get("candidate_email"),
+            "position": assessment_data.get("position", "")
+        },
+        "results": {
+            "primary_style": assessment_data.get("primary_style"),
+            "raw_scores": assessment_data.get("raw_scores"),
+            "normalized_scores": assessment_data.get("normalized_scores"),
+            "relative_percentages": assessment_data.get("relative_percentages"),
+            "resultant_angle": assessment_data.get("resultant_angle"),
+            "resultant_magnitude": assessment_data.get("resultant_magnitude"),
+            "style_description": assessment_data.get("style_description")
+        },
+        "metadata": {
+            "questions_count": len(assessment_data.get("questions_used", [])),
+            "assessment_completed_at": assessment_data.get("timestamp"),
+            "source": "disc-assessment-api",
+            "version": "2.1.0"
+        }
+    }
+    
+    # Add webhook secret if configured
+    if webhook_config["webhook_secret"]:
+        payload["webhook_secret"] = webhook_config["webhook_secret"]
+    
+    headers = {
+        "Content-Type": "application/json",
+        "User-Agent": "DISC-Assessment-API/2.1.0",
+        "X-Webhook-Source": "disc-assessment"
+    }
+    
+    if webhook_config["webhook_secret"]:
+        headers["X-Webhook-Secret"] = webhook_config["webhook_secret"]
+    
+    attempt = 1
+    max_attempts = webhook_config["webhook_retry_attempts"]
+    
+    while attempt <= max_attempts:
+        try:
+            logger.info(f"📤 Sending webhook to n8n (attempt {attempt}/{max_attempts}) for {assessment_id}")
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    url,
+                    json=payload,
+                    headers=headers,
+                    timeout=aiohttp.ClientTimeout(total=webhook_config["webhook_timeout"])
+                ) as response:
+                    
+                    response_text = await response.text()
+                    
+                    # Log the attempt
+                    await log_webhook_attempt(
+                        assessment_id=assessment_id,
+                        webhook_url=url,
+                        payload=payload,
+                        response_status=response.status,
+                        response_body=response_text,
+                        attempt_number=attempt,
+                        success=response.status in [200, 201, 202]
+                    )
+                    
+                    if response.status in [200, 201, 202]:
+                        logger.info(f"✅ Webhook sent successfully for {assessment_id} (status: {response.status})")
+                        return True
+                    else:
+                        logger.warning(f"⚠️ Webhook failed for {assessment_id} with status {response.status}")
+                        
+                        if response.status >= 500 and attempt < max_attempts:
+                            wait_time = 2 ** attempt
+                            logger.info(f"🔄 Retrying in {wait_time} seconds...")
+                            await asyncio.sleep(wait_time)
+                            attempt += 1
+                            continue
+                        
+                        return False
+                        
+        except asyncio.TimeoutError:
+            error_msg = f"Webhook timeout (attempt {attempt}/{max_attempts})"
+            logger.warning(f"⏰ {error_msg} for {assessment_id}")
+            
+            await log_webhook_attempt(
+                assessment_id=assessment_id,
+                webhook_url=url,
+                payload=payload,
+                error_message=error_msg,
+                attempt_number=attempt,
+                success=False
+            )
+            
+            if attempt < max_attempts:
+                await asyncio.sleep(2 ** attempt)
+                attempt += 1
+                continue
+            return False
+            
+        except Exception as e:
+            error_msg = f"Webhook error: {str(e)}"
+            logger.error(f"🚨 {error_msg} for {assessment_id} (attempt {attempt}/{max_attempts})")
+            
+            await log_webhook_attempt(
+                assessment_id=assessment_id,
+                webhook_url=url,
+                payload=payload,
+                error_message=error_msg,
+                attempt_number=attempt,
+                success=False
+            )
+            
+            if attempt < max_attempts:
+                await asyncio.sleep(2 ** attempt)
+                attempt += 1
+                continue
+            return False
+    
+    logger.error(f"🚨 Webhook failed after {max_attempts} attempts for {assessment_id}")
+    return False
+
+def send_webhook_sync(assessment_data: dict):
+    """
+    Synchronous wrapper for webhook sending (fallback)
+    """
+    try:
+        url = webhook_config["n8n_webhook_url"]
+        if not url or not webhook_config["webhook_enabled"]:
+            return False
+        
+        payload = {
+            "event_type": "disc_assessment_completed",
+            "timestamp": datetime.now().isoformat(),
+            "assessment_id": assessment_data.get("assessment_id"),
+            "candidate": {
+                "name": assessment_data.get("candidate_name"),
+                "email": assessment_data.get("candidate_email"),
+                "position": assessment_data.get("position", "")
+            },
+            "results": {
+                "primary_style": assessment_data.get("primary_style"),
+                "raw_scores": assessment_data.get("raw_scores"),
+                "normalized_scores": assessment_data.get("normalized_scores"),
+                "relative_percentages": assessment_data.get("relative_percentages"),
+                "resultant_angle": assessment_data.get("resultant_angle"),
+                "resultant_magnitude": assessment_data.get("resultant_magnitude"),
+                "style_description": assessment_data.get("style_description")
+            },
+            "metadata": {
+                "questions_count": len(assessment_data.get("questions_used", [])),
+                "assessment_completed_at": assessment_data.get("timestamp"),
+                "source": "disc-assessment-api",
+                "version": "2.1.0"
+            }
+        }
+        
+        headers = {
+            "Content-Type": "application/json",
+            "User-Agent": "DISC-Assessment-API/2.1.0",
+            "X-Webhook-Source": "disc-assessment"
+        }
+        
+        if webhook_config["webhook_secret"]:
+            payload["webhook_secret"] = webhook_config["webhook_secret"]
+            headers["X-Webhook-Secret"] = webhook_config["webhook_secret"]
+        
+        response = requests.post(
+            url,
+            json=payload,
+            headers=headers,
+            timeout=webhook_config["webhook_timeout"]
+        )
+        
+        if response.status_code in [200, 201, 202]:
+            logger.info(f"✅ Webhook sent successfully (sync) to n8n")
+            return True
+        else:
+            logger.warning(f"⚠️ Webhook failed (sync) with status {response.status_code}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"🚨 Webhook sync error: {e}")
         return False
 
 # ================== PYDANTIC MODELS ==================
@@ -577,12 +870,24 @@ def get_all_assessments_from_db(limit: int = 50, offset: int = 0):
 @app.on_event("startup")
 async def startup_event():
     """Initialize database on startup"""
-    logger.info("🚀 Starting DISC Assessment API...")
+    logger.info("🚀 Starting DISC Assessment API with n8n webhook integration...")
     
     success = init_connection_pool()
     if success:
         create_tables()
         logger.info("✅ API startup completed successfully")
+        
+        # Log webhook configuration
+        logger.info("🔗 Webhook configuration:")
+        logger.info(f"   Enabled: {webhook_config['webhook_enabled']}")
+        if webhook_config['webhook_enabled']:
+            masked_url = webhook_config['n8n_webhook_url']
+            if masked_url and len(masked_url) > 50:
+                masked_url = masked_url[:50] + "..."
+            logger.info(f"   URL: {masked_url}")
+            logger.info(f"   Timeout: {webhook_config['webhook_timeout']}s")
+            logger.info(f"   Retry attempts: {webhook_config['webhook_retry_attempts']}")
+            logger.info(f"   Secret configured: {bool(webhook_config['webhook_secret'])}")
     else:
         logger.error("🚨 API startup completed with database issues")
 
@@ -592,18 +897,26 @@ async def root():
     db_status = "connected" if connection_pool else "disconnected"
     
     return {
-        "message": "DISC Assessment API - Railway PostgreSQL",
-        "version": "2.0.0",
+        "message": "DISC Assessment API - Railway PostgreSQL with n8n Webhook",
+        "version": "2.1.0",
         "questions_loaded": len(questions_data),
         "descriptions_loaded": len(disc_descriptions.get("single", {})),
         "database_status": db_status,
         "is_production": is_production(),
+        "webhook": {
+            "enabled": webhook_config["webhook_enabled"],
+            "configured": bool(webhook_config["n8n_webhook_url"])
+        },
         "endpoints": {
             "submit_assessment": "POST /api/v1/assessment/submit",
             "get_result": "GET /api/v1/assessment/{assessment_id}",
             "list_assessments": "GET /api/v1/assessments",
             "get_by_email": "GET /api/v1/assessments/by-email/{email}",
             "get_questions": "GET /api/v1/questions",
+            "webhook_test": "POST /api/v1/webhook/test",
+            "webhook_config": "GET /api/v1/webhook/config",
+            "webhook_logs": "GET /api/v1/webhook/logs",
+            "webhook_stats": "GET /api/v1/webhook/stats",
             "health": "GET /health",
             "debug_env": "GET /debug/environment",
             "debug_db": "GET /debug/database"
@@ -612,7 +925,7 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint untuk monitoring"""
+    """Health check endpoint dengan webhook status"""
     db_status = "connected" if connection_pool else "disconnected"
     
     # Test database jika tersedia
@@ -634,7 +947,12 @@ async def health_check():
         "database_test": "passed" if db_test else "failed",
         "questions_available": len(questions_data) > 0,
         "descriptions_available": len(disc_descriptions.get("single", {})) > 0,
-        "is_production": is_production()
+        "is_production": is_production(),
+        "webhook": {
+            "enabled": webhook_config["webhook_enabled"],
+            "configured": bool(webhook_config["n8n_webhook_url"]),
+            "url": webhook_config["n8n_webhook_url"][:50] + "..." if webhook_config["n8n_webhook_url"] and len(webhook_config["n8n_webhook_url"]) > 50 else webhook_config["n8n_webhook_url"]
+        }
     }
 
 @app.get("/debug/environment")
@@ -645,7 +963,7 @@ async def debug_environment():
     
     env_vars = {}
     for key in sorted(os.environ.keys()):
-        if any(term in key.upper() for term in ['DATABASE', 'POSTGRES', 'PG', 'RAILWAY', 'PORT', 'SERVICE']):
+        if any(term in key.upper() for term in ['DATABASE', 'POSTGRES', 'PG', 'RAILWAY', 'PORT', 'SERVICE', 'WEBHOOK', 'N8N']):
             value = os.environ[key]
             # Hide sensitive data
             if any(sensitive in key.lower() for sensitive in ['password', 'secret', 'key', 'token']):
@@ -659,7 +977,12 @@ async def debug_environment():
         "database_pool_status": "connected" if connection_pool else "disconnected",
         "is_production": is_production(),
         "questions_loaded": len(questions_data),
-        "descriptions_loaded": len(disc_descriptions.get("single", {}))
+        "descriptions_loaded": len(disc_descriptions.get("single", {})),
+        "webhook_config": {
+            "enabled": webhook_config["webhook_enabled"],
+            "url_configured": bool(webhook_config["n8n_webhook_url"]),
+            "secret_configured": bool(webhook_config["webhook_secret"])
+        }
     }
 
 @app.get("/debug/database")
@@ -690,6 +1013,13 @@ async def debug_database():
                 except:
                     assessment_count = "Table not found"
                 
+                # Webhook logs count
+                try:
+                    cur.execute("SELECT COUNT(*) FROM webhook_logs;")
+                    webhook_logs_count = cur.fetchone()[0]
+                except:
+                    webhook_logs_count = "Table not found"
+                
                 return {
                     "status": "connected",
                     "database_info": {
@@ -697,7 +1027,8 @@ async def debug_database():
                         "database": db_name,
                         "user": db_user,
                         "tables_count": table_count,
-                        "assessments_count": assessment_count
+                        "assessments_count": assessment_count,
+                        "webhook_logs_count": webhook_logs_count
                     },
                     "connection_pool": "active",
                     "ssl_mode": get_ssl_mode()
@@ -742,7 +1073,7 @@ async def get_random_questions(count: int = 30):
 
 @app.post("/api/v1/assessment/submit", response_model=DISCResult)
 async def submit_assessment(request: DISCAssessmentRequest):
-    """Process DISC assessment dan simpan ke PostgreSQL"""
+    """Process DISC assessment, simpan ke PostgreSQL, dan kirim webhook ke n8n"""
     try:
         # Validate input
         if not questions_data:
@@ -820,6 +1151,20 @@ async def submit_assessment(request: DISCAssessmentRequest):
         save_success = save_assessment_to_db(result)
         if not save_success:
             logger.warning(f"Failed to save assessment {assessment_id} to database, but returning result")
+        
+        # 🆕 SEND WEBHOOK TO N8N
+        try:
+            webhook_data = result.dict()
+            webhook_success = await send_webhook_to_n8n(webhook_data)
+            
+            if webhook_success:
+                logger.info(f"✅ Webhook sent to n8n for assessment {assessment_id}")
+            else:
+                logger.warning(f"⚠️ Failed to send webhook to n8n for assessment {assessment_id}")
+                
+        except Exception as webhook_error:
+            logger.error(f"🚨 Webhook error for assessment {assessment_id}: {webhook_error}")
+            # Don't fail the assessment if webhook fails
         
         logger.info(f"✅ Assessment {assessment_id} processed successfully for {request.candidate_email}")
         return result
@@ -987,6 +1332,183 @@ async def delete_assessment(assessment_id: str):
         logger.error(f"🚨 Error deleting assessment: {e}")
         raise HTTPException(status_code=500, detail="Error deleting assessment")
 
+# ================== WEBHOOK ENDPOINTS ==================
+
+@app.post("/api/v1/webhook/test")
+async def test_webhook(test_data: Optional[dict] = None):
+    """Test webhook connectivity to n8n"""
+    if not webhook_config["webhook_enabled"]:
+        return {
+            "status": "disabled",
+            "message": "Webhook is disabled",
+            "config": {
+                "webhook_enabled": False,
+                "webhook_url": "not configured" if not webhook_config["n8n_webhook_url"] else "configured"
+            }
+        }
+    
+    if not webhook_config["n8n_webhook_url"]:
+        return {
+            "status": "error",
+            "message": "Webhook URL not configured",
+            "config": {
+                "webhook_enabled": webhook_config["webhook_enabled"],
+                "webhook_url": "not configured"
+            }
+        }
+    
+    # Create test data
+    test_payload = test_data or {
+        "event_type": "webhook_test",
+        "timestamp": datetime.now().isoformat(),
+        "assessment_id": "test-" + str(uuid.uuid4())[:8],
+        "candidate": {
+            "name": "Test User",
+            "email": "test@example.com",
+            "position": "Test Position"
+        },
+        "results": {
+            "primary_style": "D",
+            "raw_scores": {"D": 10, "I": 5, "S": 3, "C": 7},
+            "normalized_scores": {"D": 75, "I": 45, "S": 35, "C": 60},
+            "relative_percentages": {"D": 35.0, "I": 21.0, "S": 16.0, "C": 28.0}
+        },
+        "metadata": {
+            "source": "webhook-test",
+            "version": "2.1.0"
+        }
+    }
+    
+    try:
+        success = await send_webhook_to_n8n(test_payload)
+        
+        return {
+            "status": "success" if success else "failed",
+            "message": "Test webhook sent successfully" if success else "Test webhook failed",
+            "webhook_url": webhook_config["n8n_webhook_url"],
+            "test_payload": test_payload
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Test webhook error: {str(e)}",
+            "webhook_url": webhook_config["n8n_webhook_url"]
+        }
+
+@app.get("/api/v1/webhook/config")
+async def get_webhook_config_endpoint():
+    """Get current webhook configuration"""
+    return {
+        "webhook_enabled": webhook_config["webhook_enabled"],
+        "webhook_url_configured": bool(webhook_config["n8n_webhook_url"]),
+        "webhook_url": webhook_config["n8n_webhook_url"][:50] + "..." if webhook_config["n8n_webhook_url"] and len(webhook_config["n8n_webhook_url"]) > 50 else webhook_config["n8n_webhook_url"],
+        "webhook_timeout": webhook_config["webhook_timeout"],
+        "webhook_retry_attempts": webhook_config["webhook_retry_attempts"],
+        "webhook_secret_configured": bool(webhook_config["webhook_secret"])
+    }
+
+@app.get("/api/v1/webhook/logs")
+async def get_webhook_logs(limit: int = 50, assessment_id: str = None, success_only: bool = False):
+    """Get webhook logs for debugging"""
+    try:
+        base_sql = """
+        SELECT assessment_id, webhook_url, response_status, error_message, 
+               attempt_number, success, sent_at
+        FROM webhook_logs
+        WHERE 1=1
+        """
+        params = []
+        
+        if assessment_id:
+            base_sql += " AND assessment_id = %s"
+            params.append(assessment_id)
+        
+        if success_only:
+            base_sql += " AND success = true"
+        
+        base_sql += " ORDER BY sent_at DESC LIMIT %s"
+        params.append(limit)
+        
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(base_sql, params)
+                logs = cur.fetchall()
+                
+                return {
+                    "total": len(logs),
+                    "limit": limit,
+                    "filters": {
+                        "assessment_id": assessment_id,
+                        "success_only": success_only
+                    },
+                    "logs": [dict(log) for log in logs]
+                }
+                
+    except Exception as e:
+        logger.error(f"🚨 Error getting webhook logs: {e}")
+        raise HTTPException(status_code=500, detail="Error retrieving webhook logs")
+
+@app.get("/api/v1/webhook/stats")
+async def get_webhook_stats():
+    """Get webhook statistics"""
+    try:
+        with get_db_connection() as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                # Total webhooks
+                cur.execute("SELECT COUNT(*) as total FROM webhook_logs")
+                total = cur.fetchone()['total']
+                
+                if total == 0:
+                    return {
+                        "total_webhooks": 0,
+                        "successful_webhooks": 0,
+                        "failed_webhooks": 0,
+                        "success_rate": 0,
+                        "recent_24h": 0,
+                        "top_errors": [],
+                        "last_updated": datetime.now().isoformat()
+                    }
+                
+                # Success rate
+                cur.execute("SELECT COUNT(*) as successful FROM webhook_logs WHERE success = true")
+                successful = cur.fetchone()['successful']
+                
+                # Recent webhooks (last 24h)
+                cur.execute("""
+                    SELECT COUNT(*) as recent 
+                    FROM webhook_logs 
+                    WHERE sent_at >= NOW() - INTERVAL '24 hours'
+                """)
+                recent = cur.fetchone()['recent']
+                
+                # Failed webhooks by error
+                cur.execute("""
+                    SELECT error_message, COUNT(*) as count
+                    FROM webhook_logs 
+                    WHERE success = false AND error_message IS NOT NULL
+                    GROUP BY error_message
+                    ORDER BY count DESC
+                    LIMIT 5
+                """)
+                errors = cur.fetchall()
+                
+                success_rate = (successful / total * 100) if total > 0 else 0
+                
+                return {
+                    "total_webhooks": total,
+                    "successful_webhooks": successful,
+                    "failed_webhooks": total - successful,
+                    "success_rate": round(success_rate, 2),
+                    "recent_24h": recent,
+                    "top_errors": [dict(error) for error in errors],
+                    "last_updated": datetime.now().isoformat()
+                }
+                
+    except Exception as e:
+        logger.error(f"🚨 Error getting webhook stats: {e}")
+        raise HTTPException(status_code=500, detail="Error retrieving webhook statistics")
+
 # Error handlers
 @app.exception_handler(psycopg2.Error)
 async def database_exception_handler(request, exc):
@@ -1025,7 +1547,7 @@ if __name__ == "__main__":
         logger.error(f"🚨 Missing required files: {missing_files}")
         sys.exit(1)
     
-    logger.info("🚀 Starting DISC Assessment API server...")
+    logger.info("🚀 Starting DISC Assessment API server with n8n webhook integration...")
     uvicorn.run(
         app, 
         host="0.0.0.0", 
