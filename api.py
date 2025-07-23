@@ -1,28 +1,65 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
+from contextlib import contextmanager
+from datetime import datetime
 import json
 import random
 import numpy as np
 import math
-from datetime import datetime
 import uuid
 import os
 import sys
-import psycopg2
-from psycopg2.extras import RealDictCursor
-import psycopg2.pool
-from contextlib import contextmanager
 import logging
 import requests
 import asyncio
 import aiohttp
-from fastapi.responses import HTMLResponse
+from collections import defaultdict
+import time
+import psycopg2
+from psycopg2.extras import RealDictCursor
+import psycopg2.pool
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# ================== RATE LIMITING ==================
+
+# Simple in-memory rate limiter (untuk production gunakan Redis)
+rate_limiter = defaultdict(list)
+RATE_LIMIT_REQUESTS = 100  # requests per window
+RATE_LIMIT_WINDOW = 3600   # 1 hour in seconds
+
+def check_rate_limit(client_ip: str) -> bool:
+    """Simple rate limiting check"""
+    current_time = time.time()
+    window_start = current_time - RATE_LIMIT_WINDOW
+    
+    # Clean old requests
+    rate_limiter[client_ip] = [
+        req_time for req_time in rate_limiter[client_ip] 
+        if req_time > window_start
+    ]
+    
+    # Check if limit exceeded
+    if len(rate_limiter[client_ip]) >= RATE_LIMIT_REQUESTS:
+        return False
+    
+    # Add current request
+    rate_limiter[client_ip].append(current_time)
+    return True
+
+def rate_limit_middleware(request):
+    """Rate limiting middleware"""
+    client_ip = request.client.host
+    if not check_rate_limit(client_ip):
+        raise HTTPException(
+            status_code=429, 
+            detail="Rate limit exceeded. Try again later."
+        )
 
 app = FastAPI(
     title="DISC Assessment API - Railway PostgreSQL with n8n Webhook",
@@ -30,13 +67,26 @@ app = FastAPI(
     version="2.1.0"
 )
 
-# Enable CORS untuk n8n dan external access
+# Enable CORS dengan security yang lebih ketat
+allowed_origins = [
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    # TODO: Replace dengan domain production Anda
+    # "https://your-production-domain.com",
+]
+
+# Tambahkan Railway domain jika ada
+railway_domain = os.getenv("RAILWAY_STATIC_URL")
+if railway_domain:
+    allowed_origins.append(f"https://{railway_domain}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=allowed_origins,
+    allow_credentials=False,  # Disable credentials untuk keamanan
+    allow_methods=["GET", "POST", "OPTIONS"],  # Limit methods
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 # ================== DATABASE CONFIGURATION ==================
@@ -176,8 +226,12 @@ def init_connection_pool():
         # Parse SSL requirements
         ssl_mode = get_ssl_mode()
         
+        # Optimized connection pool size berdasarkan environment
+        min_conn = 2 if is_production() else 1
+        max_conn = 50 if is_production() else 10  # Increase max connections
+        
         connection_pool = psycopg2.pool.SimpleConnectionPool(
-            1, 20,  # min dan max connections
+            min_conn, max_conn,
             DATABASE_URL,
             sslmode=ssl_mode,
             connect_timeout=30,
@@ -639,10 +693,30 @@ def load_questions():
     try:
         with open("questions.json", "r", encoding='utf-8') as f:
             data = json.load(f)
+        
+        # Validate questions structure
+        if not isinstance(data, list):
+            logger.error("🚨 questions.json must contain a list")
+            return []
+        
+        for i, question in enumerate(data):
+            if not isinstance(question, dict):
+                logger.error(f"🚨 Question {i} must be a dictionary")
+                return []
+            
+            required_fields = ['question', 'style', 'mapping']
+            missing_fields = [field for field in required_fields if field not in question]
+            if missing_fields:
+                logger.error(f"🚨 Question {i} missing fields: {missing_fields}")
+                return []
+        
         logger.info(f"✅ Loaded {len(data)} questions from questions.json")
         return data
     except FileNotFoundError:
         logger.error("🚨 questions.json not found")
+        return []
+    except json.JSONDecodeError as e:
+        logger.error(f"🚨 Invalid JSON in questions.json: {e}")
         return []
     except Exception as e:
         logger.error(f"🚨 Error loading questions: {e}")
@@ -653,18 +727,65 @@ def load_disc_descriptions():
     try:
         with open("disc_descriptions.json", "r", encoding='utf-8') as f:
             data = json.load(f)
+        
+        # Validate structure
+        if not isinstance(data, dict) or "single" not in data:
+            logger.error("🚨 disc_descriptions.json must contain 'single' key")
+            return {"single": {}}
+        
+        # Validate each style has required fields
+        required_styles = ['D', 'I', 'S', 'C']
+        for style in required_styles:
+            if style in data["single"]:
+                style_data = data["single"][style]
+                required_fields = ['title', 'description', 'strengths', 'challenges']
+                missing_fields = [field for field in required_fields if field not in style_data]
+                if missing_fields:
+                    logger.warning(f"⚠️ Style {style} missing fields: {missing_fields}")
+        
         logger.info("✅ Loaded DISC descriptions from disc_descriptions.json")
         return data
     except FileNotFoundError:
         logger.error("🚨 disc_descriptions.json not found")
         return {"single": {}}
+    except json.JSONDecodeError as e:
+        logger.error(f"🚨 Invalid JSON in disc_descriptions.json: {e}")
+        return {"single": {}}
     except Exception as e:
         logger.error(f"🚨 Error loading DISC descriptions: {e}")
         return {"single": {}}
 
-# Load data
+# Load data - Cache untuk optimasi memori
 questions_data = load_questions()
 disc_descriptions = load_disc_descriptions()
+
+# Pre-shuffle pool untuk optimasi CPU (cache multiple shuffled versions)
+_question_shuffle_cache = []
+_cache_size = 10  # Number of pre-shuffled versions to cache
+
+def initialize_question_cache():
+    """Initialize pre-shuffled question cache for better performance"""
+    global _question_shuffle_cache
+    if not questions_data:
+        return
+    
+    logger.info("🔄 Initializing question shuffle cache...")
+    _question_shuffle_cache = []
+    
+    for i in range(_cache_size):
+        shuffled = questions_data.copy()
+        random.shuffle(shuffled)
+        _question_shuffle_cache.append(shuffled)
+    
+    logger.info(f"✅ Question cache initialized with {len(_question_shuffle_cache)} pre-shuffled versions")
+
+def get_shuffled_questions():
+    """Get pre-shuffled questions to avoid CPU overhead"""
+    if not _question_shuffle_cache:
+        initialize_question_cache()
+    
+    # Return random pre-shuffled version instead of shuffling every time
+    return random.choice(_question_shuffle_cache) if _question_shuffle_cache else questions_data.copy()
 
 # ================== DISC LOGIC FUNCTIONS (EXACT COPY) ==================
 
@@ -876,6 +997,7 @@ async def startup_event():
     success = init_connection_pool()
     if success:
         create_tables()
+        initialize_question_cache()  # Initialize performance cache
         logger.info("✅ API startup completed successfully")
         
         # Log webhook configuration
@@ -899,7 +1021,7 @@ async def root():
     <!DOCTYPE html>
     <html>
     <head>
-        <title>🎯 DISC Personality Assessment</title>
+        <title>🎯 Tes Kepribadian DISC</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
@@ -949,7 +1071,9 @@ async def root():
             .radio-option label {
                 display: block; padding: 10px 15px; background: #f8f9fa;
                 border: 2px solid #e0e6ed; border-radius: 8px; text-align: center;
-                cursor: pointer; transition: all 0.3s; font-size: 14px;
+                cursor: pointer; transition: all 0.3s; font-size: 16px; font-weight: bold; 
+                min-height: 80px; display: flex; flex-direction: column; justify-content: center;
+                min-width: 120px; word-wrap: break-word;
             }
             .radio-option input[type="radio"]:checked + label {
                 background: #667eea; border-color: #667eea; color: white;
@@ -986,18 +1110,18 @@ async def root():
             <div class="content">
                 <!-- Welcome Section -->
                 <div id="welcomeSection">
-                    <h2>Welcome to the DISC Assessment</h2>
-                    <p>The DISC assessment helps you understand your personality traits across four major dimensions:</p>
+                    <h2>Selamat datang di Tes DISC</h2>
+                    <p>Tes DISC membantu Anda memahami karakter kepribadian Anda dalam empat dimensi utama:</p>
                     <ul style="margin: 15px 0 15px 20px; line-height: 1.8;">
                         <li><strong>D - Dominance:</strong> Direct, results-oriented, and decisive</li>
                         <li><strong>I - Influence:</strong> Outgoing, enthusiastic, and persuasive</li>
                         <li><strong>S - Steadiness:</strong> Patient, supportive, and team-oriented</li>
                         <li><strong>C - Conscientiousness:</strong> Analytical, precise, and detail-oriented</li>
                     </ul>
-                    <p>This assessment takes about 10-15 minutes and will provide you with personalized insights.</p>
+                    <p>Tes ini memakan waktu sekitar 10-15 menit dan akan memberikan Anda wawasan kepribadian yang dipersonalisasi.</p>
                     <br>
                     <div style="text-align: center;">
-                        <button class="btn" onclick="startAssessment()">Start Assessment</button>
+                        <button class="btn" onclick="startAssessment()">Mulai Tes</button>
                     </div>
                 </div>
 
@@ -1109,27 +1233,27 @@ async def root():
                         <div class="radio-group">
                             <div class="radio-option">
                                 <input type="radio" id="q${index}_1" name="q${index}" value="1">
-                                <label for="q${index}_1">1<br>Completely<br>Disagree</label>
+                                <label for="q${index}_1">1<br>Sangat<br>Tidak Setuju</label>
                             </div>
                             <div class="radio-option">
                                 <input type="radio" id="q${index}_2" name="q${index}" value="2">
-                                <label for="q${index}_2">2<br>Somewhat<br>Disagree</label>
+                                <label for="q${index}_2">2<br>Tidak<br>Setuju</label>
                             </div>
                             <div class="radio-option">
                                 <input type="radio" id="q${index}_3" name="q${index}" value="3">
-                                <label for="q${index}_3">3<br>Neutral</label>
+                                <label for="q${index}_3">3<br>Netral</label>
                             </div>
                             <div class="radio-option">
                                 <input type="radio" id="q${index}_4" name="q${index}" value="4">
-                                <label for="q${index}_4">4<br>Somewhat<br>Agree</label>
+                                <label for="q${index}_4">4<br>Setuju</label>
                             </div>
                             <div class="radio-option">
                                 <input type="radio" id="q${index}_5" name="q${index}" value="5">
-                                <label for="q${index}_5">5<br>Completely<br>Agree</label>
+                                <label for="q${index}_5">5<br>Sangat<br>Setuju</label>
                             </div>
                         </div>
                         <br>
-                        <button type="button" class="btn" onclick="nextQuestion(${index})">${index === questions.length - 1 ? 'Complete Assessment' : 'Next Question'}</button>
+                        <button type="button" class="btn" onclick="nextQuestion(${index})">${index === questions.length - 1 ? 'Complete Assessment' : 'Pertanyaan Berikutnya'}</button>
                     </div>
                 `;
                 
@@ -1370,8 +1494,7 @@ async def get_random_questions(count: int = 30):
     if count > len(questions_data):
         count = len(questions_data)
     
-    shuffled_questions = questions_data.copy()
-    random.shuffle(shuffled_questions)
+    shuffled_questions = get_shuffled_questions()
     selected_questions = shuffled_questions[:count]
     
     for i, q in enumerate(selected_questions):
@@ -1392,9 +1515,11 @@ async def get_random_questions(count: int = 30):
     }
 
 @app.post("/api/v1/assessment/submit", response_model=DISCResult)
-async def submit_assessment(request: DISCAssessmentRequest):
+async def submit_assessment(request: DISCAssessmentRequest, fastapi_request: Request):
     """Process DISC assessment, simpan ke PostgreSQL, dan kirim webhook ke n8n"""
     try:
+        # Rate limiting check
+        rate_limit_middleware(fastapi_request)
         # Validate input
         if not questions_data:
             raise HTTPException(status_code=503, detail="Questions data not available")
@@ -1405,13 +1530,31 @@ async def submit_assessment(request: DISCAssessmentRequest):
         if len(request.answers) > len(questions_data):
             raise HTTPException(status_code=400, detail=f"Too many answers. Maximum: {len(questions_data)}")
         
+        # Validate candidate information
+        if not request.candidate_name.strip():
+            raise HTTPException(status_code=400, detail="Candidate name cannot be empty")
+        
+        if len(request.candidate_name) > 255:
+            raise HTTPException(status_code=400, detail="Candidate name too long (max 255 characters)")
+        
+        if not request.candidate_email.strip():
+            raise HTTPException(status_code=400, detail="Candidate email cannot be empty")
+        
+        if "@" not in request.candidate_email or "." not in request.candidate_email:
+            raise HTTPException(status_code=400, detail="Invalid email format")
+        
+        if len(request.candidate_email) > 255:
+            raise HTTPException(status_code=400, detail="Email too long (max 255 characters)")
+        
+        if len(request.position) > 255:
+            raise HTTPException(status_code=400, detail="Position too long (max 255 characters)")
+        
         # Generate unique assessment ID
         assessment_id = str(uuid.uuid4())
         logger.info(f"Processing assessment {assessment_id} for {request.candidate_email}")
         
-        # Prepare questions (sama seperti original)
-        shuffled_questions = questions_data.copy()
-        random.shuffle(shuffled_questions)
+        # Prepare questions (optimized dengan cache)
+        shuffled_questions = get_shuffled_questions()
         selected_questions = shuffled_questions[:len(request.answers)]
         
         # Calculate raw scores
@@ -1419,16 +1562,29 @@ async def submit_assessment(request: DISCAssessmentRequest):
         
         for i, answer_data in enumerate(request.answers):
             if i >= len(selected_questions):
+                logger.warning(f"Extra answer at index {i}, ignoring")
                 break
                 
             q = selected_questions[i]
             answer = answer_data.answer
             
             # Validate answer range
+            if not isinstance(answer, int):
+                raise HTTPException(status_code=400, detail=f"Answer at index {i} must be an integer")
+            
             if answer < 1 or answer > 5:
-                raise HTTPException(status_code=400, detail=f"Answer {answer} out of range (1-5)")
+                raise HTTPException(status_code=400, detail=f"Answer {answer} at index {i} out of range (1-5)")
+            
+            # Validate question structure
+            if "mapping" not in q:
+                logger.error(f"Question {i} missing mapping")
+                raise HTTPException(status_code=500, detail="Question data structure error")
             
             for style in ["D", "I", "S", "C"]:
+                if style not in q["mapping"]:
+                    logger.error(f"Question {i} missing mapping for style {style}")
+                    raise HTTPException(status_code=500, detail=f"Question mapping error for style {style}")
+                
                 raw_scores[style] += q["mapping"][style] * (answer - 3)
         
         # Normalize scores

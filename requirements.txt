@@ -1,14 +1,25 @@
+# Core API dependencies
 fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
 pydantic>=2.5.0
+
+# Database
 psycopg2-binary>=2.9.7
-streamlit>=1.28.0
+
+# Math and data processing
 numpy>=1.24.0
-pandas>=2.1.0
-plotly>=5.17.0
-matplotlib>=3.7.0
-fpdf2>=2.7.0
+
+# HTTP requests
 requests>=2.31.0
 aiohttp>=3.9.0
-asyncio-throttle>=1.0.2
+
+# Form data handling
 python-multipart>=0.0.6
+
+# Unused dependencies moved to comments (if needed later):
+# streamlit>=1.28.0         # For Streamlit UI (in _unused/)
+# pandas>=2.1.0             # Not used in current API
+# plotly>=5.17.0            # Not used in current API  
+# matplotlib>=3.7.0         # Not used in current API
+# fpdf2>=2.7.0              # Not used in current API
+# asyncio-throttle>=1.0.2   # Not used (using custom rate limiter)
