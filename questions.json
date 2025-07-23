@@ -1,7 +1,7 @@
 [
     {
         "style": "D",
-        "question": "I thrive in fast-paced environments where I can take charge and make decisions quickly.",
+        "question": "Saya berkembang di lingkungan yang serba cepat di mana saya bisa memimpin dan mengambil keputusan dengan cepat.",
         "mapping": {
             "D": 2,
             "I": 1,
@@ -11,7 +11,7 @@
     },
     {
         "style": "I",
-        "question": "I genuinely enjoy collaborating with others and building strong relationships within a team.",
+        "question": "Saya benar-benar menikmati bekerja sama dengan orang lain dan membangun hubungan yang kuat dalam sebuah tim.",
         "mapping": {
             "D": 0,
             "I": 2,
@@ -21,7 +21,7 @@
     },
     {
         "style": "C",
-        "question": "I find great satisfaction in meticulous planning and ensuring every detail is accounted for.",
+        "question": "Saya merasa sangat puas ketika bisa merencanakan dengan teliti dan memastikan setiap detail diperhatikan.",
         "mapping": {
             "D": 0,
             "I": 0,
@@ -31,7 +31,7 @@
     },
     {
         "style": "S",
-        "question": "I prioritize maintaining harmony and believe in finding common ground to resolve conflicts peacefully.",
+        "question": "Saya mengutamakan menjaga keharmonisan dan percaya bahwa menemukan titik temu adalah cara terbaik menyelesaikan konflik secara damai.",
         "mapping": {
             "D": -1,
             "I": 0,
@@ -41,7 +41,7 @@
     },
     {
         "style": "D",
-        "question": "I naturally gravitate towards leadership roles and feel comfortable taking initiative in group settings.",
+        "question": "Saya secara alami tertarik pada peran kepemimpinan dan merasa nyaman mengambil inisiatif dalam kelompok.",
         "mapping": {
             "D": 2,
             "I": 1,
@@ -51,7 +51,7 @@
     },
     {
         "style": "I",
-        "question": "I have a knack for inspiring others and enjoy sharing my enthusiasm to get people excited about my ideas.",
+        "question": "Saya memiliki bakat untuk menginspirasi orang lain dan senang membagikan antusiasme saya agar orang lain tertarik dengan ide-ide saya.",
         "mapping": {
             "D": 1,
             "I": 2,
@@ -61,7 +61,7 @@
     },
     {
         "style": "S",
-        "question": "I appreciate the comfort of routines and prefer a predictable structure to my day-to-day activities.",
+        "question": "Saya menghargai kenyamanan rutinitas dan lebih suka struktur yang dapat diprediksi dalam aktivitas sehari-hari saya.",
         "mapping": {
             "D": -1,
             "I": -1,
@@ -71,7 +71,7 @@
     },
     {
         "style": "C",
-        "question": "I am highly detail-oriented and take pride in producing work that is precise and accurate.",
+        "question": "Saya sangat teliti dan bangga menghasilkan pekerjaan yang presisi dan akurat.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -81,7 +81,7 @@
     },
     {
         "style": "D",
-        "question": "I feel most at ease when I have a clear understanding of my responsibilities and can maintain control over my tasks.",
+        "question": "Saya merasa paling nyaman ketika saya memahami dengan jelas tanggung jawab saya dan dapat mengendalikan tugas-tugas saya.",
         "mapping": {
             "D": 2,
             "I": 0,
@@ -91,7 +91,7 @@
     },
     {
         "style": "I",
-        "question": "I enjoy being the life of the party and easily connect with others in social situations.",
+        "question": "Saya senang menjadi pusat perhatian dan mudah bergaul dengan orang lain dalam situasi sosial.",
         "mapping": {
             "D": 0,
             "I": 2,
@@ -101,7 +101,7 @@
     },
     {
         "style": "S",
-        "question": "I value stability and prefer environments that are calm and predictable.",
+        "question": "Saya menghargai stabilitas dan lebih suka lingkungan yang tenang dan dapat diprediksi.",
         "mapping": {
             "D": -1,
             "I": 0,
@@ -111,7 +111,7 @@
     },
     {
         "style": "C",
-        "question": "I am comfortable analyzing data and using logic to solve complex problems.",
+        "question": "Saya merasa nyaman menganalisis data dan menggunakan logika untuk memecahkan masalah yang kompleks.",
         "mapping": {
             "D": -1,
             "I": -1,
@@ -121,7 +121,7 @@
     },
     {
         "style": "D",
-        "question": "I am energized by challenges and enjoy thinking on my feet in high-pressure situations.",
+        "question": "Saya merasa bersemangat menghadapi tantangan dan senang berpikir cepat dalam situasi penuh tekanan.",
         "mapping": {
             "D": 2,
             "I": 1,
@@ -131,7 +131,7 @@
     },
     {
         "style": "I",
-        "question": "I am a people person and find it easy to build rapport with individuals from all walks of life.",
+        "question": "Saya adalah orang yang mudah bergaul dan mudah membangun hubungan baik dengan berbagai macam orang.",
         "mapping": {
             "D": 0,
             "I": 2,
@@ -141,7 +141,7 @@
     },
     {
         "style": "S",
-        "question": "I tend to be cautious and prefer to carefully weigh my options before taking any risks.",
+        "question": "Saya cenderung berhati-hati dan lebih suka mempertimbangkan pilihan dengan matang sebelum mengambil risiko.",
         "mapping": {
             "D": -2,
             "I": -1,
@@ -151,7 +151,7 @@
     },
     {
         "style": "C",
-        "question": "I have high standards for myself and others and strive for excellence in everything I do.",
+        "question": "Saya memiliki standar tinggi untuk diri sendiri dan orang lain, serta selalu berusaha mencapai keunggulan dalam segala hal yang saya lakukan.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -161,7 +161,7 @@
     },
     {
         "style": "D",
-        "question": "I value honesty and directness in communication, even if it means having difficult conversations.",
+        "question": "Saya menghargai kejujuran dan komunikasi yang langsung, meskipun itu berarti harus melakukan percakapan yang sulit.",
         "mapping": {
             "D": 2,
             "I": 0,
@@ -171,7 +171,7 @@
     },
     {
         "style": "S",
-        "question": "I believe in the power of collaboration and prefer working in teams where everyone's voice is heard.",
+        "question": "Saya percaya pada kekuatan kolaborasi dan lebih suka bekerja dalam tim di mana setiap suara didengar.",
         "mapping": {
             "D": 0,
             "I": 1,
@@ -181,7 +181,7 @@
     },
     {
         "style": "C",
-        "question": "I enjoy digging into complex information and finding patterns or insights that others might miss.",
+        "question": "Saya senang mendalami informasi yang kompleks dan menemukan pola atau wawasan yang mungkin terlewat oleh orang lain.",
         "mapping": {
             "D": -1,
             "I": 0,
@@ -191,7 +191,7 @@
     },
     {
         "style": "D",
-        "question": "I am constantly seeking new opportunities to learn and grow, both personally and professionally.",
+        "question": "Saya selalu mencari peluang baru untuk belajar dan berkembang, baik secara pribadi maupun profesional.",
         "mapping": {
             "D": 2,
             "I": 1,
@@ -201,7 +201,7 @@
     },
     {
         "style": "S",
-        "question": "I strive to maintain positive relationships and avoid unnecessary conflict whenever possible.",
+        "question": "Saya berusaha menjaga hubungan yang positif dan menghindari konflik yang tidak perlu kapan pun memungkinkan.",
         "mapping": {
             "D": -1,
             "I": 0,
@@ -211,7 +211,7 @@
     },
     {
         "style": "C",
-        "question": "I take pride in my ability to create well-structured plans and execute them flawlessly.",
+        "question": "Saya bangga dengan kemampuan saya membuat rencana yang terstruktur dengan baik dan mengeksekusinya dengan sempurna.",
         "mapping": {
             "D": 0,
             "I": 0,
@@ -221,7 +221,7 @@
     },
     {
         "style": "D",
-        "question": "I am willing to make tough decisions and stand my ground, even if it means facing opposition or disagreement.",
+        "question": "Saya bersedia membuat keputusan yang sulit dan berpegang teguh pada pendapat saya, bahkan jika itu berarti menghadapi oposisi atau perbedaan pendapat.",
         "mapping": {
             "D": 2,
             "I": 0,
@@ -231,7 +231,7 @@
     },
     {
         "style": "I",
-        "question": "I love sharing my passion with others and can easily get people excited about my ideas.",
+        "question": "Saya senang berbagi kegembiraan saya dengan orang lain dan dapat dengan mudah membuat orang lain terinspirasi oleh ide saya.",
         "mapping": {
             "D": 1,
             "I": 2,
@@ -241,7 +241,7 @@
     },
     {
         "style": "S",
-        "question": "I take pride in being dependable and consistent in everything I do.",
+        "question": "Saya bangga dengan keandalan dan konsistensi dalam segala hal yang saya lakukan.",
         "mapping": {
             "D": -1,
             "I": 0,
@@ -251,7 +251,7 @@
     },
     {
         "style": "C",
-        "question": "I double-check my work meticulously to ensure accuracy and avoid mistakes.",
+        "question": "Saya memastikan akurasi dengan memeriksa pekerjaan saya secara cermat untuk menghindari kesalahan.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -261,7 +261,7 @@
     },
     {
         "style": "D",
-        "question": "I thrive in environments that allow me to make quick decisions and move forward without unnecessary deliberation.",
+        "question": "Saya senang bekerja dalam lingkungan yang memungkinkan saya membuat keputusan cepat dan bergerak maju tanpa perlu banyak berpikir.",
         "mapping": {
             "D": 2,
             "I": 1,
@@ -271,7 +271,7 @@
     },
     {
         "style": "D",
-        "question": "I feel confident taking charge in situations where others may hesitate or feel uncertain.",
+        "question": "Saya yakin mengambil alih dalam situasi di mana orang lain mungkin ragu atau tidak yakin.",
         "mapping": {
             "D": 2,
             "I": 0,
@@ -281,7 +281,7 @@
     },
     {
         "style": "D",
-        "question": "I enjoy setting bold goals and pushing myself to achieve them, even when the odds are against me.",
+        "question": "Saya senang menetapkan tujuan yang berani dan mendorong diri sendiri untuk mencapai mereka, bahkan ketika peluang berlawanan dengan saya.",
         "mapping": {
             "D": 2,
             "I": 1,
@@ -291,7 +291,7 @@
     },
     {
         "style": "I",
-        "question": "I often find myself motivating others with my enthusiasm and positive attitude.",
+        "question": "Saya sering menemukan diri saya memotivasi orang lain dengan semangat dan sikap positif saya.",
         "mapping": {
             "D": 0,
             "I": 2,
@@ -301,7 +301,7 @@
     },
     {
         "style": "I",
-        "question": "I feel energized when I am surrounded by people and enjoy interacting with them regularly.",
+        "question": "Saya merasa energik ketika saya berada di sekitar orang dan menikmati berinteraksi dengan mereka secara teratur.",
         "mapping": {
             "D": 0,
             "I": 2,
@@ -311,7 +311,7 @@
     },
     {
         "style": "S",
-        "question": "I tend to avoid confrontation and prefer resolving disagreements through understanding and compromise.",
+        "question": "Saya cenderung menghindari konfrontasi dan lebih suka memecahkan perselisihan melalui pemahaman dan kompromi.",
         "mapping": {
             "D": -1,
             "I": 0,
@@ -321,7 +321,7 @@
     },
     {
         "style": "S",
-        "question": "I find satisfaction in maintaining long-term relationships and helping others feel comfortable.",
+        "question": "Saya merasa puas dengan menjaga hubungan jangka panjang dan membantu orang lain merasa nyaman.",
         "mapping": {
             "D": -1,
             "I": 1,
@@ -331,7 +331,7 @@
     },
     {
         "style": "C",
-        "question": "I enjoy working in structured environments where tasks are well-defined and expectations are clear.",
+        "question": "Saya senang bekerja dalam lingkungan yang terstruktur di mana tugas-tugas jelas dan harapan jelas.",
         "mapping": {
             "D": -1,
             "I": -1,
@@ -341,7 +341,7 @@
     },
     {
         "style": "C",
-        "question": "I am very methodical in my approach and ensure that every step of a process is followed precisely.",
+        "question": "Saya sangat sistematis dalam pendekatan saya dan memastikan bahwa setiap langkah dalam proses diikuti dengan tepat.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -351,7 +351,7 @@
     },
     {
         "style": "D",
-        "question": "I prefer to make decisions quickly and decisively rather than overthinking every detail.",
+        "question": "Saya lebih suka membuat keputusan cepat dan tegas daripada berpikir terlalu banyak tentang setiap detail.",
         "mapping": {
             "D": 2,
             "I": 0,
@@ -361,7 +361,7 @@
     },
     {
         "style": "I",
-        "question": "I get excited by the idea of meeting new people and forming connections with those around me.",
+        "question": "Saya senang dengan ide untuk bertemu dengan orang baru dan membentuk koneksi dengan orang di sekitar saya.",
         "mapping": {
             "D": 0,
             "I": 2,
@@ -371,7 +371,7 @@
     },
     {
         "style": "S",
-        "question": "I prefer a calm and steady environment, where sudden changes are rare and things go as planned.",
+        "question": "Saya lebih suka lingkungan yang tenang dan stabil, di mana perubahan mendadak jarang terjadi dan hal-hal berjalan sesuai rencana.",
         "mapping": {
             "D": -1,
             "I": -1,
@@ -381,7 +381,7 @@
     },
     {
         "style": "C",
-        "question": "I tend to focus on the accuracy of details and always double-check my work for mistakes.",
+        "question": "Saya cenderung fokus pada akurasi detail dan selalu memeriksa pekerjaan saya untuk kesalahan.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -391,7 +391,7 @@
     },
     {
         "style": "D",
-        "question": "I thrive in competitive environments and enjoy striving to be the best at what I do.",
+        "question": "Saya senang bekerja dalam lingkungan yang kompetitif dan menikmati berjuang untuk menjadi yang terbaik dalam apa yang saya lakukan.",
         "mapping": {
             "D": 2,
             "I": 1,
@@ -401,7 +401,7 @@
     },
     {
         "style": "S",
-        "question": "I prefer taking a supportive role, helping others achieve their goals rather than being in the spotlight myself.",
+        "question": "Saya lebih suka memainkan peran mendukung, membantu orang lain mencapai tujuan mereka daripada berada di tengah perhatian.",
         "mapping": {
             "D": -1,
             "I": 0,
@@ -411,7 +411,7 @@
     },
     {
         "style": "I",
-        "question": "I often enjoy telling stories or experiences to entertain or inspire those around me.",
+        "question": "Saya sering menikmati berbagi cerita atau pengalaman untuk menghibur atau memotivasi orang di sekitar saya.",
         "mapping": {
             "D": 0,
             "I": 2,
@@ -421,7 +421,7 @@
     },
     {
         "style": "C",
-        "question": "I am driven by the need for consistency and accuracy, and I dislike when things are left incomplete or messy.",
+        "question": "Saya didorong oleh kebutuhan untuk konsistensi dan akurasi, dan saya tidak suka ketika hal-hal tidak selesai atau kotor.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -431,7 +431,7 @@
     },
     {
         "style": "D",
-        "question": "I do not enjoy situations where I have to wait for others to make decisions.",
+        "question": "Saya tidak suka ketika saya harus menunggu orang lain untuk membuat keputusan.",
         "mapping": {
             "D": 2,
             "I": 0,
@@ -441,7 +441,7 @@
     },
     {
         "style": "I",
-        "question": "I do not enjoy spending long periods of time working alone without any interaction with others.",
+        "question": "Saya tidak suka menghabiskan waktu lama bekerja sendirian tanpa interaksi dengan orang lain.",
         "mapping": {
             "D": 0,
             "I": 2,
@@ -451,7 +451,7 @@
     },
     {
         "style": "S",
-        "question": "I do not enjoy environments that are constantly changing and unpredictable.",
+        "question": "Saya tidak suka lingkungan yang selalu berubah dan tidak dapat diprediksi.",
         "mapping": {
             "D": -1,
             "I": -1,
@@ -461,7 +461,7 @@
     },
     {
         "style": "C",
-        "question": "I do not enjoy making decisions based on incomplete information or guesswork.",
+        "question": "Saya tidak suka membuat keputusan berdasarkan informasi yang tidak lengkap atau keputusan yang didasarkan pada perkiraan.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -471,7 +471,7 @@
     },
     {
         "style": "D",
-        "question": "I do not enjoy being in situations where I have little to no control over the outcome.",
+        "question": "Saya tidak suka berada dalam situasi di mana saya tidak memiliki kontrol atas hasilnya.",
         "mapping": {
             "D": 2,
             "I": 0,
@@ -481,7 +481,7 @@
     },
     {
         "style": "I",
-        "question": "I do not enjoy working in isolation without any feedback or recognition from others.",
+        "question": "Saya tidak suka bekerja sendirian tanpa umpan balik atau pengakuan dari orang lain.",
         "mapping": {
             "D": 0,
             "I": 2,
@@ -491,7 +491,7 @@
     },
     {
         "style": "S",
-        "question": "I do not enjoy situations that involve conflict or disagreement.",
+        "question": "Saya tidak suka situasi yang melibatkan konflik atau perselisihan.",
         "mapping": {
             "D": -1,
             "I": 0,
@@ -501,7 +501,7 @@
     },
     {
         "style": "C",
-        "question": "I do not enjoy tackling tasks that require creativity over precision and accuracy.",
+        "question": "Saya tidak suka menangani tugas yang membutuhkan kreativitas lebih dari akurasi dan ketepatan.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -511,7 +511,7 @@
     },
     {
         "style": "D",
-        "question": "I do not enjoy following directions from others without being able to give input or suggestions.",
+        "question": "Saya tidak suka mengikuti arahan dari orang lain tanpa bisa memberikan input atau saran.",
         "mapping": {
             "D": 2,
             "I": 0,
@@ -521,7 +521,7 @@
     },
     {
         "style": "I",
-        "question": "I do not enjoy routine tasks that do not involve interacting with others.",
+        "question": "Saya tidak suka tugas rutin yang tidak melibatkan interaksi dengan orang lain.",
         "mapping": {
             "D": 0,
             "I": 2,
@@ -531,7 +531,7 @@
     },
     {
         "style": "S",
-        "question": "I do not enjoy working in fast-paced environments with constant pressure.",
+        "question": "Saya tidak suka bekerja dalam lingkungan yang cepat dan bertekanan.",
         "mapping": {
             "D": -1,
             "I": 0,
@@ -541,7 +541,7 @@
     },
     {
         "style": "C",
-        "question": "I do not enjoy situations where the rules are unclear or frequently change.",
+        "question": "Saya tidak suka situasi di mana aturan tidak jelas atau sering berubah.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -551,7 +551,7 @@
     },
     {
         "style": "D",
-        "question": "I do not enjoy situations where I am not the one leading the effort or making decisions.",
+        "question": "Saya tidak suka situasi di mana saya bukan yang mengarahkan usaha atau membuat keputusan.",
         "mapping": {
             "D": 2,
             "I": 0,
@@ -561,7 +561,7 @@
     },
     {
         "style": "I",
-        "question": "I do not enjoy working in environments where I am not able to socialize and collaborate.",
+        "question": "Saya tidak suka bekerja dalam lingkungan di mana saya tidak dapat berinteraksi dan berkolaborasi.",
         "mapping": {
             "D": 0,
             "I": 2,
@@ -571,7 +571,7 @@
     },
     {
         "style": "S",
-        "question": "I do not enjoy being forced to make decisions quickly without enough time to think things through.",
+        "question": "Saya tidak suka dibebani untuk membuat keputusan cepat tanpa cukup waktu untuk memikirkan hal-hal itu.",
         "mapping": {
             "D": -1,
             "I": -1,
@@ -581,7 +581,7 @@
     },
     {
         "style": "C",
-        "question": "I do not enjoy working in environments where there is little emphasis on accuracy or attention to detail.",
+        "question": "Saya tidak suka bekerja dalam lingkungan di mana ada sedikit pengaruh pada akurasi atau perhatian terhadap detail.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -591,7 +591,7 @@
     },
     {
         "style": "I",
-        "question": "I enjoy participating in group activities where I can connect with a wide variety of people.",
+        "question": "Saya senang berpartisipasi dalam kegiatan grup di mana saya dapat berhubungan dengan berbagai orang.",
         "mapping": {
             "D": 0,
             "I": 2,
@@ -601,7 +601,7 @@
     },
     {
         "style": "I",
-        "question": "I find it easy to motivate and energize others in team settings.",
+        "question": "Saya menemukan mudah untuk memotivasi dan menggerakkan orang lain dalam situasi tim.",
         "mapping": {
             "D": 0,
             "I": 2,
@@ -611,7 +611,7 @@
     },
     {
         "style": "I",
-        "question": "I am comfortable speaking in front of large audiences and enjoy sharing my ideas.",
+        "question": "Saya nyaman berbicara di depan audiensi besar dan menikmati berbagi ide-ide saya.",
         "mapping": {
             "D": 0,
             "I": 2,
@@ -621,7 +621,7 @@
     },
     {
         "style": "I",
-        "question": "I thrive in environments where I can interact with others regularly and build rapport.",
+        "question": "Saya berhasil dalam lingkungan di mana saya dapat berinteraksi dengan orang lain secara teratur dan membangun hubungan.",
         "mapping": {
             "D": 0,
             "I": 2,
@@ -631,7 +631,7 @@
     },
     {
         "style": "I",
-        "question": "I prefer brainstorming sessions where I can collaborate on ideas with others.",
+        "question": "Saya lebih suka sesi brainstorming di mana saya dapat berkolaborasi pada ide-ide dengan orang lain.",
         "mapping": {
             "D": 0,
             "I": 2,
@@ -641,7 +641,7 @@
     },
     {
         "style": "I",
-        "question": "I find fulfillment in helping others see the big picture and inspire them toward a common goal.",
+        "question": "Saya merasa memuaskan dalam membantu orang lain melihat gambaran besar dan memotivasi mereka untuk mencapai tujuan bersama.",
         "mapping": {
             "D": 0,
             "I": 2,
@@ -651,7 +651,7 @@
     },
     {
         "style": "I",
-        "question": "I am skilled at building consensus among diverse groups.",
+        "question": "Saya berpengalaman dalam membangun kesepahaman di antara kelompok yang berbeda.",
         "mapping": {
             "D": 0,
             "I": 2,
@@ -661,7 +661,7 @@
     },
     {
         "style": "I",
-        "question": "I enjoy taking the lead in social gatherings and fostering a sense of community.",
+        "question": "Saya menikmati mengambil alih kepemimpinan dalam acara sosial dan membangun rasa komunitas.",
         "mapping": {
             "D": 1,
             "I": 2,
@@ -671,7 +671,7 @@
     },
     {
         "style": "I",
-        "question": "I am known for being persuasive and can easily influence others to support my ideas.",
+        "question": "Saya dikenal sebagai orang yang berpersuasi dan dapat mempengaruhi orang lain untuk mendukung ide-ide saya.",
         "mapping": {
             "D": 1,
             "I": 2,
@@ -681,7 +681,7 @@
     },
     {
         "style": "I",
-        "question": "I thrive in environments where creativity and collaboration are encouraged.",
+        "question": "Saya berhasil dalam lingkungan di mana kreativitas dan berkolaborasi dihargai.",
         "mapping": {
             "D": 0,
             "I": 2,
@@ -691,7 +691,7 @@
     },
     {
         "style": "I",
-        "question": "I often take initiative to reach out to others and establish connections.",
+        "question": "Saya sering mengambil inisiatif untuk mencari tahu orang lain dan membangun hubungan.",
         "mapping": {
             "D": 0,
             "I": 2,
@@ -701,7 +701,7 @@
     },
     {
         "style": "I",
-        "question": "I enjoy celebrating the achievements of others and fostering a positive team culture.",
+        "question": "Saya menikmati mengenang kinerja orang lain dan membangun budaya tim yang positif.",
         "mapping": {
             "D": 0,
             "I": 2,
@@ -711,7 +711,7 @@
     },
     {
         "style": "I",
-        "question": "I am energized by working on projects that allow me to collaborate with multiple departments or teams.",
+        "question": "Saya bersemangat saat bekerja pada proyek yang memungkinkan saya berkolaborasi dengan beberapa departemen atau tim.",
         "mapping": {
             "D": 0,
             "I": 2,
@@ -721,7 +721,7 @@
     },
     {
         "style": "I",
-        "question": "I excel at networking and enjoy building long-term professional relationships.",
+        "question": "Saya berpengalaman dalam networking dan menikmati membangun hubungan profesional jangka panjang.",
         "mapping": {
             "D": 0,
             "I": 2,
@@ -731,7 +731,7 @@
     },
     {
         "style": "I",
-        "question": "I am motivated by recognition from others and enjoy receiving feedback on my contributions.",
+        "question": "Saya termotivasi dengan pengakuan dari orang lain dan menikmati menerima umpan balik pada kontribusi saya.",
         "mapping": {
             "D": 0,
             "I": 2,
@@ -741,7 +741,7 @@
     },
     {
         "style": "C",
-        "question": "I enjoy developing detailed plans and following them precisely to achieve my goals.",
+        "question": "Saya menikmati mengembangkan rencana detail dan mengikuti mereka dengan tepat untuk mencapai tujuan saya.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -751,7 +751,7 @@
     },
     {
         "style": "C",
-        "question": "I take pride in my ability to maintain high standards of accuracy and quality in my work.",
+        "question": "Saya bangga dengan kemampuan saya untuk menjaga standar akurasi dan kualitas dalam pekerjaan saya.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -761,7 +761,7 @@
     },
     {
         "style": "C",
-        "question": "I prefer environments where tasks are clearly defined, and there is a structured way to complete them.",
+        "question": "Saya lebih suka lingkungan di mana tugas jelas didefinisikan, dan ada cara terstruktur untuk menyelesaikannya.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -771,7 +771,7 @@
     },
     {
         "style": "C",
-        "question": "I am meticulous about ensuring all details are correct before moving forward with a task.",
+        "question": "Saya sangat peduli untuk memastikan semua detail benar sebelum melanjutkan tugas.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -781,7 +781,7 @@
     },
     {
         "style": "C",
-        "question": "I am comfortable analyzing complex data and ensuring everything is accounted for before making a decision.",
+        "question": "Saya nyaman menganalisis data kompleks dan memastikan semua hal terdaftar sebelum membuat keputusan.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -791,7 +791,7 @@
     },
     {
         "style": "C",
-        "question": "I thrive in roles where attention to detail and accuracy are critical.",
+        "question": "Saya berhasil dalam peran di mana perhatian terhadap detail dan akurasi sangat penting.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -801,7 +801,7 @@
     },
     {
         "style": "C",
-        "question": "I am highly organized and prefer to plan my tasks in advance to ensure efficiency.",
+        "question": "Saya sangat terorganisir dan lebih suka memplan tugas saya secara terorganisir untuk memastikan efisiensi.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -811,7 +811,7 @@
     },
     {
         "style": "C",
-        "question": "I value precision and dislike situations where there is ambiguity or uncertainty.",
+        "question": "Saya menghargai akurasi dan tidak suka situasi di mana ada keragu-raguan atau ketidakpastian.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -821,7 +821,7 @@
     },
     {
         "style": "C",
-        "question": "I prefer to work in environments where there are clear rules and guidelines that everyone follows.",
+        "question": "Saya lebih suka bekerja dalam lingkungan di mana ada aturan dan pedoman yang dibaca oleh semua orang.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -831,7 +831,7 @@
     },
     {
         "style": "C",
-        "question": "I enjoy projects where I can methodically follow steps to ensure everything is done correctly.",
+        "question": "Saya menikmati proyek di mana saya dapat mengikuti langkah demi langkah untuk memastikan semua dilakukan dengan benar.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -841,7 +841,7 @@
     },
     {
         "style": "C",
-        "question": "I often double-check my work to ensure there are no mistakes before submission.",
+        "question": "Saya sering memeriksa pekerjaan saya untuk memastikan tidak ada kesalahan sebelum pengiriman.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -851,7 +851,7 @@
     },
     {
         "style": "C",
-        "question": "I am driven by the need to create well-organized, structured processes that others can follow.",
+        "question": "Saya termotivasi oleh kebutuhan untuk membuat proses yang baik, terorganisir, dan dapat diikuti oleh orang lain.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -861,7 +861,7 @@
     },
     {
         "style": "C",
-        "question": "I am motivated by the desire to produce error-free work and meet high expectations.",
+        "question": "Saya termotivasi oleh keinginan untuk menghasilkan pekerjaan bebas kesalahan dan memenuhi harapan yang tinggi.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -871,7 +871,7 @@
     },
     {
         "style": "C",
-        "question": "I feel most comfortable when I have clear, defined responsibilities and can focus on the details.",
+        "question": "Saya lebih nyaman ketika saya memiliki tanggung jawab yang jelas dan dapat fokus pada detail.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -881,7 +881,7 @@
     },
     {
         "style": "C",
-        "question": "I dislike situations where there is little control over quality and accuracy.",
+        "question": "Saya tidak suka situasi dimana hanya ada sedikit kontrol atas kualitas dan akurasi.",
         "mapping": {
             "D": 0,
             "I": -1,
@@ -891,7 +891,7 @@
     },
     {
         "style": "D",
-        "question": "I thrive when I can take charge of situations and direct others toward achieving goals.",
+        "question": "Saya merasa berhasil ketika saya dapat mengambil alih situasi dan mengarahkan orang lain untuk mencapai tujuan.",
         "mapping": {
             "D": 2,
             "I": 1,
@@ -901,7 +901,7 @@
     },
     {
         "style": "D",
-        "question": "I prefer to set ambitious goals and push myself and others to reach them.",
+        "question": "Saya lebih suka menetapkan tujuan yang berani dan mendorong diri sendiri dan orang lain untuk mencapai tujuan.",
         "mapping": {
             "D": 2,
             "I": 1,
@@ -911,7 +911,7 @@
     },
     {
         "style": "D",
-        "question": "I enjoy making decisions quickly and don't hesitate to act when opportunities arise.",
+        "question": "Saya menikmati membuat keputusan cepat dan tidak ragu untuk bertindak ketika peluang muncul.",
         "mapping": {
             "D": 2,
             "I": 0,
@@ -921,7 +921,7 @@
     },
     {
         "style": "D",
-        "question": "I am comfortable taking risks if it means achieving a bigger reward.",
+        "question": "Saya nyaman mengambil risiko jika itu menghasilkan reward yang lebih besar.",
         "mapping": {
             "D": 2,
             "I": 0,
@@ -931,7 +931,7 @@
     },
     {
         "style": "D",
-        "question": "I am not afraid to challenge the status quo if it means driving progress.",
+        "question": "Saya tidak takut menantang status quo jika itu berarti menggerakkan progres.",
         "mapping": {
             "D": 2,
             "I": 0,
@@ -941,7 +941,7 @@
     },
     {
         "style": "D",
-        "question": "I feel confident in my ability to lead teams and make difficult decisions.",
+        "question": "Saya merasa yakin dalam kemampuan saya untuk memimpin tim dan membuat keputusan sulit.",
         "mapping": {
             "D": 2,
             "I": 0,
@@ -951,7 +951,7 @@
     },
     {
         "style": "D",
-        "question": "I prefer fast-paced environments where I can make significant impacts quickly.",
+        "question": "Saya lebih suka lingkungan yang dinamis di mana saya dapat membuat dampak signifikan dengan cepat.",
         "mapping": {
             "D": 2,
             "I": 1,
@@ -961,7 +961,7 @@
     },
     {
         "style": "D",
-        "question": "I enjoy working in environments where I am the one responsible for the outcomes.",
+        "question": "Saya menikmati bekerja dalam lingkungan di mana saya yang bertanggung jawab untuk hasil.",
         "mapping": {
             "D": 2,
             "I": 0,
@@ -971,7 +971,7 @@
     },
     {
         "style": "D",
-        "question": "I thrive on competition and am driven to outperform others.",
+        "question": "Saya berhasil dalam kompetisi dan termotivasi untuk meningkatkan kinerja dibandingkan orang lain.",
         "mapping": {
             "D": 2,
             "I": 1,
@@ -981,7 +981,7 @@
     },
     {
         "style": "D",
-        "question": "I am comfortable holding others accountable for their performance to meet high standards.",
+        "question": "Saya nyaman menetapkan tanggung jawab atas kinerja orang lain untuk memenuhi standar yang tinggi.",
         "mapping": {
             "D": 2,
             "I": 0,
@@ -991,7 +991,7 @@
     },
     {
         "style": "D",
-        "question": "I enjoy taking on difficult challenges that test my skills and resilience.",
+        "question": "Saya menikmati menghadapi tantangan yang sulit yang menguji keterampilan dan kekuatan.",
         "mapping": {
             "D": 2,
             "I": 0,
@@ -1001,7 +1001,7 @@
     },
     {
         "style": "D",
-        "question": "I prefer to lead projects rather than follow instructions from others.",
+        "question": "Saya lebih suka memimpin proyek daripada mengikuti instruksi dari orang lain.",
         "mapping": {
             "D": 2,
             "I": 0,
@@ -1011,7 +1011,7 @@
     },
     {
         "style": "D",
-        "question": "I am willing to take unpopular decisions if it leads to long-term success.",
+        "question": "Saya bersedia mengambil keputusan yang tidak populer jika itu berarti mencapai keberhasilan jangka panjang.",
         "mapping": {
             "D": 2,
             "I": 0,
@@ -1021,7 +1021,7 @@
     },
     {
         "style": "D",
-        "question": "I enjoy situations where I can demonstrate my expertise and take charge.",
+        "question": "Saya menikmati situasi di mana saya dapat memperlihatkan keahlian saya dan mengambil alih.",
         "mapping": {
             "D": 2,
             "I": 1,
@@ -1031,7 +1031,7 @@
     },
     {
         "style": "D",
-        "question": "I am energized by opportunities that allow me to exercise authority and influence.",
+        "question": "Saya terinspirasi oleh peluang yang memungkinkan saya berperan sebagai pemimpin dan mempengaruhi orang lain.",
         "mapping": {
             "D": 2,
             "I": 1,
@@ -1041,7 +1041,7 @@
     },
     {
         "style": "S",
-        "question": "I thrive in environments where tasks and expectations are clearly defined and rarely change.",
+        "question": "Saya berhasil dalam lingkungan di mana tugas dan harapan jelas didefinisikan dan jarang berubah.",
         "mapping": {
             "D": -1,
             "I": 0,
@@ -1051,7 +1051,7 @@
     },
     {
         "style": "S",
-        "question": "I feel most comfortable when I can follow a consistent routine and avoid unexpected changes.",
+        "question": "Saya lebih nyaman ketika saya dapat mengikuti rutinitas yang konsisten dan menghindari perubahan tak terduga.",
         "mapping": {
             "D": -1,
             "I": 0,
@@ -1061,7 +1061,7 @@
     },
     {
         "style": "S",
-        "question": "I prefer working in a structured environment where there are clear processes and minimal disruptions.",
+        "question": "Saya lebih suka bekerja dalam lingkungan yang terstruktur di mana ada proses yang jelas dan sedikit perubahan.",
         "mapping": {
             "D": -1,
             "I": 0,
@@ -1071,7 +1071,7 @@
     },
     {
         "style": "S",
-        "question": "I value long-term relationships and enjoy working with the same team over extended periods.",
+        "question": "Saya menghargai hubungan jangka panjang dan menikmati bekerja dengan tim yang sama selama periode yang diperpanjang.",
         "mapping": {
             "D": -1,
             "I": 1,
@@ -1081,7 +1081,7 @@
     },
     {
         "style": "S",
-        "question": "I am at my best when I can focus on one task at a time, without frequent interruptions.",
+        "question": "Saya merasa paling nyaman ketika saya dapat fokus pada satu tugas sekaligus, tanpa sering terinterupsi.",
         "mapping": {
             "D": -1,
             "I": 0,
@@ -1091,7 +1091,7 @@
     },
     {
         "style": "S",
-        "question": "I prefer predictable workflows where I know what to expect each day.",
+        "question": "Saya lebih suka alur kerja yang dapat diprediksi di mana saya tahu apa yang akan saya dapatkan setiap hari.",
         "mapping": {
             "D": -1,
             "I": 0,
@@ -1101,7 +1101,7 @@
     },
     {
         "style": "S",
-        "question": "I feel most productive in environments where stability and reliability are prioritized over rapid change.",
+        "question": "Saya merasa paling produktif dalam lingkungan di mana stabilitas dan keandalan diprioritaskan daripada perubahan yang cepat.",
         "mapping": {
             "D": -1,
             "I": 0,
@@ -1111,7 +1111,7 @@
     },
     {
         "style": "S",
-        "question": "I am more comfortable with incremental improvements rather than sudden, large-scale changes.",
+        "question": "Saya lebih nyaman dengan peningkatan bertahap daripada perubahan besar yang mendadak.",
         "mapping": {
             "D": -1,
             "I": 0,
@@ -1121,7 +1121,7 @@
     },
     {
         "style": "S",
-        "question": "I value a calm, steady approach to problem-solving rather than rushing into quick fixes.",
+        "question": "Saya menghargai pendekatan yang tenang dan konsisten dalam memecahkan masalah daripada berusaha mempercepat solusi.",
         "mapping": {
             "D": -1,
             "I": 0,
@@ -1131,7 +1131,7 @@
     },
     {
         "style": "S",
-        "question": "I prefer long-term projects that allow me to work methodically toward a defined goal.",
+        "question": "Saya lebih suka proyek jangka panjang yang memungkinkan saya bekerja sistematis menuju tujuan yang jelas.",
         "mapping": {
             "D": -1,
             "I": 0,
@@ -1141,7 +1141,7 @@
     },
     {
         "style": "S",
-        "question": "I enjoy environments where change is carefully planned and managed rather than happening unexpectedly.",
+        "question": "Saya menikmati lingkungan di mana perubahan direncanakan dan dikelola dengan hati-hati daripada terjadi secara tiba-tiba.",
         "mapping": {
             "D": -1,
             "I": 0,
@@ -1151,7 +1151,7 @@
     },
     {
         "style": "S",
-        "question": "I feel more secure when I know the exact outcomes or consequences of my actions.",
+        "question": "Saya merasa lebih aman ketika saya tahu hasil atau konsekuensi dari tindakan saya.",
         "mapping": {
             "D": -1,
             "I": 0,
@@ -1161,7 +1161,7 @@
     },
     {
         "style": "S",
-        "question": "I appreciate environments where stability is prioritized and sudden changes are kept to a minimum.",
+        "question": "Saya menghargai lingkungan di mana stabilitas diprioritaskan dan perubahan tiba-tiba dihindari.",
         "mapping": {
             "D": -1,
             "I": 0,
@@ -1171,7 +1171,7 @@
     },
     {
         "style": "S",
-        "question": "I am comfortable when I can rely on established processes and know that things will follow a predictable pattern.",
+        "question": "Saya nyaman ketika saya dapat mempercayai proses yang sudah ada dan tahu bahwa hal-hal akan mengikuti pola yang dapat diprediksi.",
         "mapping": {
             "D": -1,
             "I": 0,
@@ -1181,7 +1181,7 @@
     },
     {
         "style": "S",
-        "question": "I prefer to work in environments where sudden changes or uncertainties are rare and decisions are well-considered.",
+        "question": "Saya lebih suka bekerja dalam lingkungan di mana perubahan mendadak atau ketidakpastian jarang terjadi dan keputusan yang baik dipertimbangkan.",
         "mapping": {
             "D": -1,
             "I": 0,
