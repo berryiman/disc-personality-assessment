@@ -949,7 +949,7 @@ async def root():
             .radio-option label {
                 display: block; padding: 10px 15px; background: #f8f9fa;
                 border: 2px solid #e0e6ed; border-radius: 8px; text-align: center;
-                cursor: pointer; transition: all 0.3s; font-size: 14px;
+                cursor: pointer; transition: all 0.3s; font-size: 18px; font-weight: bold; min-height: 70px; display: flex; flex-direction: column; justify-content: center;
             }
             .radio-option input[type="radio"]:checked + label {
                 background: #667eea; border-color: #667eea; color: white;
