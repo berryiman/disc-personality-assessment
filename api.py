@@ -986,18 +986,18 @@ async def root():
             <div class="content">
                 <!-- Welcome Section -->
                 <div id="welcomeSection">
-                    <h2>Welcome to the DISC Assessment</h2>
-                    <p>The DISC assessment helps you understand your personality traits across four major dimensions:</p>
+                    <h2>Selamat datang di Tes DISC</h2>
+                    <p>Tes DISC membantu Anda memahami karakter kepribadian Anda dalam empat dimensi utama:</p>
                     <ul style="margin: 15px 0 15px 20px; line-height: 1.8;">
                         <li><strong>D - Dominance:</strong> Direct, results-oriented, and decisive</li>
                         <li><strong>I - Influence:</strong> Outgoing, enthusiastic, and persuasive</li>
                         <li><strong>S - Steadiness:</strong> Patient, supportive, and team-oriented</li>
                         <li><strong>C - Conscientiousness:</strong> Analytical, precise, and detail-oriented</li>
                     </ul>
-                    <p>This assessment takes about 10-15 minutes and will provide you with personalized insights.</p>
+                    <p>Tes ini memakan waktu sekitar 10-15 menit dan akan memberikan Anda wawasan kepribadian yang dipersonalisasi.</p>
                     <br>
                     <div style="text-align: center;">
-                        <button class="btn" onclick="startAssessment()">Start Assessment</button>
+                        <button class="btn" onclick="startAssessment()">Mulai Tes</button>
                     </div>
                 </div>
 
@@ -1109,27 +1109,27 @@ async def root():
                         <div class="radio-group">
                             <div class="radio-option">
                                 <input type="radio" id="q${index}_1" name="q${index}" value="1">
-                                <label for="q${index}_1">1<br>Completely<br>Disagree</label>
+                                <label for="q${index}_1">1<br>Sangat<br>Tidak Setuju</label>
                             </div>
                             <div class="radio-option">
                                 <input type="radio" id="q${index}_2" name="q${index}" value="2">
-                                <label for="q${index}_2">2<br>Somewhat<br>Disagree</label>
+                                <label for="q${index}_2">2<br>Tidak<br>Setuju</label>
                             </div>
                             <div class="radio-option">
                                 <input type="radio" id="q${index}_3" name="q${index}" value="3">
-                                <label for="q${index}_3">3<br>Neutral</label>
+                                <label for="q${index}_3">3<br>Netral</label>
                             </div>
                             <div class="radio-option">
                                 <input type="radio" id="q${index}_4" name="q${index}" value="4">
-                                <label for="q${index}_4">4<br>Somewhat<br>Agree</label>
+                                <label for="q${index}_4">4<br>Setuju</label>
                             </div>
                             <div class="radio-option">
                                 <input type="radio" id="q${index}_5" name="q${index}" value="5">
-                                <label for="q${index}_5">5<br>Completely<br>Agree</label>
+                                <label for="q${index}_5">5<br>Sangat<br>Setuju</label>
                             </div>
                         </div>
                         <br>
-                        <button type="button" class="btn" onclick="nextQuestion(${index})">${index === questions.length - 1 ? 'Complete Assessment' : 'Next Question'}</button>
+                        <button type="button" class="btn" onclick="nextQuestion(${index})">${index === questions.length - 1 ? 'Complete Assessment' : 'Pertanyaan Berikutnya'}</button>
                     </div>
                 `;
                 
