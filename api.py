@@ -18,6 +18,7 @@ import logging
 import requests
 import asyncio
 import aiohttp
+from fastapi.responses import HTMLResponse
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -891,37 +892,356 @@ async def startup_event():
     else:
         logger.error("🚨 API startup completed with database issues")
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 async def root():
-    """Root endpoint dengan informasi lengkap"""
-    db_status = "connected" if connection_pool else "disconnected"
-    
-    return {
-        "message": "DISC Assessment API - Railway PostgreSQL with n8n Webhook",
-        "version": "2.1.0",
-        "questions_loaded": len(questions_data),
-        "descriptions_loaded": len(disc_descriptions.get("single", {})),
-        "database_status": db_status,
-        "is_production": is_production(),
-        "webhook": {
-            "enabled": webhook_config["webhook_enabled"],
-            "configured": bool(webhook_config["n8n_webhook_url"])
-        },
-        "endpoints": {
-            "submit_assessment": "POST /api/v1/assessment/submit",
-            "get_result": "GET /api/v1/assessment/{assessment_id}",
-            "list_assessments": "GET /api/v1/assessments",
-            "get_by_email": "GET /api/v1/assessments/by-email/{email}",
-            "get_questions": "GET /api/v1/questions",
-            "webhook_test": "POST /api/v1/webhook/test",
-            "webhook_config": "GET /api/v1/webhook/config",
-            "webhook_logs": "GET /api/v1/webhook/logs",
-            "webhook_stats": "GET /api/v1/webhook/stats",
-            "health": "GET /health",
-            "debug_env": "GET /debug/environment",
-            "debug_db": "GET /debug/database"
-        }
-    }
+    """Home page dengan assessment form yang lengkap"""
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>🎯 DISC Personality Assessment</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                min-height: 100vh; padding: 20px;
+            }
+            .container { 
+                max-width: 900px; margin: 0 auto; background: white;
+                border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                overflow: hidden;
+            }
+            .header {
+                background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+                color: white; padding: 40px; text-align: center;
+            }
+            .header h1 { font-size: 2.5em; margin-bottom: 10px; font-weight: 300; }
+            .header p { font-size: 1.2em; opacity: 0.9; }
+            .content { padding: 40px; }
+            .btn {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white; padding: 15px 40px; border: none; border-radius: 50px;
+                font-size: 18px; cursor: pointer; text-decoration: none;
+                display: inline-block; transition: transform 0.2s, box-shadow 0.2s;
+            }
+            .btn:hover {
+                transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+                text-decoration: none; color: white;
+            }
+            .form-group { margin-bottom: 25px; }
+            label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
+            input, select { 
+                width: 100%; padding: 12px 16px; border: 2px solid #e0e6ed; 
+                border-radius: 10px; font-size: 16px; transition: border-color 0.3s;
+            }
+            input:focus, select:focus { outline: none; border-color: #667eea; }
+            .question {
+                margin: 30px 0; padding: 25px; border: 2px solid #f0f0f0;
+                border-radius: 15px; transition: border-color 0.3s;
+            }
+            .question:hover { border-color: #667eea; }
+            .radio-group { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+            .radio-option { flex: 1; min-width: 120px; }
+            .radio-option input[type="radio"] { display: none; }
+            .radio-option label {
+                display: block; padding: 10px 15px; background: #f8f9fa;
+                border: 2px solid #e0e6ed; border-radius: 8px; text-align: center;
+                cursor: pointer; transition: all 0.3s; font-size: 14px;
+            }
+            .radio-option input[type="radio"]:checked + label {
+                background: #667eea; border-color: #667eea; color: white;
+            }
+            .hidden { display: none; }
+            .loading { text-align: center; padding: 40px; }
+            .spinner {
+                border: 4px solid #f3f3f3; border-top: 4px solid #667eea;
+                border-radius: 50%; width: 40px; height: 40px;
+                animation: spin 1s linear infinite; margin: 0 auto 20px;
+            }
+            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            .results { text-align: center; padding: 20px; }
+            .style-badge {
+                display: inline-block; background: #667eea; color: white;
+                padding: 10px 20px; border-radius: 25px; font-size: 24px;
+                font-weight: bold; margin: 20px 0;
+            }
+            .scores-grid {
+                display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 20px; margin: 30px 0;
+            }
+            .score-card { background: #f8f9fa; padding: 20px; border-radius: 15px; text-align: center; }
+            .score-value { font-size: 2em; font-weight: bold; color: #667eea; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🎯 DISC Personality Assessment</h1>
+                <p>Discover your personality style and unlock your potential</p>
+            </div>
+            
+            <div class="content">
+                <!-- Welcome Section -->
+                <div id="welcomeSection">
+                    <h2>Welcome to the DISC Assessment</h2>
+                    <p>The DISC assessment helps you understand your personality traits across four major dimensions:</p>
+                    <ul style="margin: 15px 0 15px 20px; line-height: 1.8;">
+                        <li><strong>D - Dominance:</strong> Direct, results-oriented, and decisive</li>
+                        <li><strong>I - Influence:</strong> Outgoing, enthusiastic, and persuasive</li>
+                        <li><strong>S - Steadiness:</strong> Patient, supportive, and team-oriented</li>
+                        <li><strong>C - Conscientiousness:</strong> Analytical, precise, and detail-oriented</li>
+                    </ul>
+                    <p>This assessment takes about 10-15 minutes and will provide you with personalized insights.</p>
+                    <br>
+                    <div style="text-align: center;">
+                        <button class="btn" onclick="startAssessment()">Start Assessment</button>
+                    </div>
+                </div>
+
+                <!-- Assessment Form -->
+                <div id="assessmentSection" class="hidden">
+                    <form id="assessmentForm">
+                        <!-- Personal Info -->
+                        <div id="personalInfo">
+                            <h2>Personal Information</h2>
+                            <div class="form-group">
+                                <label for="name">Full Name *</label>
+                                <input type="text" id="name" name="name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email Address *</label>
+                                <input type="email" id="email" name="email" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="position">Position/Role</label>
+                                <input type="text" id="position" name="position" placeholder="Your current or desired position">
+                            </div>
+                            <button type="button" class="btn" onclick="startQuestions()">Continue to Questions</button>
+                        </div>
+
+                        <!-- Questions Container -->
+                        <div id="questionsContainer" class="hidden">
+                            <!-- Questions will be loaded here -->
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Loading Section -->
+                <div id="loadingSection" class="hidden">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <h3>Processing Your Assessment...</h3>
+                        <p>We're analyzing your responses and sending notifications.</p>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div id="resultsSection" class="hidden">
+                    <div class="results">
+                        <!-- Results will be displayed here -->
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div style="margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 10px; text-align: center;">
+                    <p><small>
+                        API: <a href="/docs" target="_blank">Documentation</a> |
+                        <a href="/health" target="_blank">Health</a> |
+                        <a href="/api/v1/webhook/config" target="_blank">Webhook Status</a>
+                    </small></p>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            let questions = [];
+            let currentAnswers = {};
+            let currentQuestionIndex = 0;
+            let personalInfo = {};
+
+            function startAssessment() {
+                document.getElementById('welcomeSection').classList.add('hidden');
+                document.getElementById('assessmentSection').classList.remove('hidden');
+            }
+
+            async function startQuestions() {
+                personalInfo = {
+                    name: document.getElementById('name').value,
+                    email: document.getElementById('email').value,
+                    position: document.getElementById('position').value
+                };
+
+                if (!personalInfo.name || !personalInfo.email) {
+                    alert('Please fill in your name and email address.');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/v1/questions?count=20');
+                    const data = await response.json();
+                    questions = data.questions;
+                    
+                    document.getElementById('personalInfo').classList.add('hidden');
+                    document.getElementById('questionsContainer').classList.remove('hidden');
+                    showQuestion(0);
+                } catch (error) {
+                    alert('Error loading questions. Please try again.');
+                    console.error('Error:', error);
+                }
+            }
+
+            function showQuestion(index) {
+                if (index >= questions.length) {
+                    submitAssessment();
+                    return;
+                }
+
+                const container = document.getElementById('questionsContainer');
+                const question = questions[index];
+                
+                container.innerHTML = `
+                    <div class="question">
+                        <h3>Question ${index + 1} of ${questions.length}</h3>
+                        <p><strong>${question.question}</strong></p>
+                        <div class="radio-group">
+                            <div class="radio-option">
+                                <input type="radio" id="q${index}_1" name="q${index}" value="1">
+                                <label for="q${index}_1">1<br>Completely<br>Disagree</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" id="q${index}_2" name="q${index}" value="2">
+                                <label for="q${index}_2">2<br>Somewhat<br>Disagree</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" id="q${index}_3" name="q${index}" value="3">
+                                <label for="q${index}_3">3<br>Neutral</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" id="q${index}_4" name="q${index}" value="4">
+                                <label for="q${index}_4">4<br>Somewhat<br>Agree</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" id="q${index}_5" name="q${index}" value="5">
+                                <label for="q${index}_5">5<br>Completely<br>Agree</label>
+                            </div>
+                        </div>
+                        <br>
+                        <button type="button" class="btn" onclick="nextQuestion(${index})">${index === questions.length - 1 ? 'Complete Assessment' : 'Next Question'}</button>
+                    </div>
+                `;
+                
+                currentQuestionIndex = index;
+            }
+
+            function nextQuestion(currentIndex) {
+                const selectedAnswer = document.querySelector(`input[name="q${currentIndex}"]:checked`);
+                
+                if (!selectedAnswer) {
+                    alert('Please select an answer to continue.');
+                    return;
+                }
+                
+                currentAnswers[currentIndex] = parseInt(selectedAnswer.value);
+                showQuestion(currentIndex + 1);
+            }
+
+            async function submitAssessment() {
+                document.getElementById('assessmentSection').classList.add('hidden');
+                document.getElementById('loadingSection').classList.remove('hidden');
+
+                const answers = [];
+                Object.keys(currentAnswers).forEach(qIndex => {
+                    answers.push({
+                        question_id: parseInt(qIndex),
+                        answer: currentAnswers[qIndex]
+                    });
+                });
+
+                const assessmentData = {
+                    candidate_name: personalInfo.name,
+                    candidate_email: personalInfo.email,
+                    position: personalInfo.position,
+                    answers: answers
+                };
+
+                try {
+                    const response = await fetch('/api/v1/assessment/submit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(assessmentData)
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        showResults(result);
+                    } else {
+                        throw new Error('Assessment submission failed');
+                    }
+                } catch (error) {
+                    document.getElementById('loadingSection').classList.add('hidden');
+                    document.getElementById('assessmentSection').classList.remove('hidden');
+                    alert('Error submitting assessment. Please try again.');
+                    console.error('Error:', error);
+                }
+            }
+
+            function showResults(data) {
+                document.getElementById('loadingSection').classList.add('hidden');
+                document.getElementById('resultsSection').classList.remove('hidden');
+
+                const resultsContainer = document.querySelector('#resultsSection .results');
+                
+                const total = Object.values(data.normalized_scores).reduce((a, b) => a + b, 0);
+                const relativePercentages = {};
+                Object.keys(data.normalized_scores).forEach(style => {
+                    relativePercentages[style] = total > 0 ? (data.normalized_scores[style] / total * 100).toFixed(1) : 0;
+                });
+
+                resultsContainer.innerHTML = `
+                    <h2>🎉 Your DISC Assessment Results</h2>
+                    <p>Hello, <strong>${data.candidate_name}</strong>!</p>
+                    
+                    <div class="style-badge">${data.primary_style}</div>
+                    
+                    <h3>Your DISC Profile Distribution:</h3>
+                    <div class="scores-grid">
+                        <div class="score-card">
+                            <h4>D - Dominance</h4>
+                            <div class="score-value">${relativePercentages.D}%</div>
+                        </div>
+                        <div class="score-card">
+                            <h4>I - Influence</h4>
+                            <div class="score-value">${relativePercentages.I}%</div>
+                        </div>
+                        <div class="score-card">
+                            <h4>S - Steadiness</h4>
+                            <div class="score-value">${relativePercentages.S}%</div>
+                        </div>
+                        <div class="score-card">
+                            <h4>C - Conscientiousness</h4>
+                            <div class="score-value">${relativePercentages.C}%</div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin: 30px 0; padding: 20px; background: #f8f9fa; border-radius: 15px; text-align: left;">
+                        <h3>Your Personality Description:</h3>
+                        <div style="white-space: pre-line;">${data.style_description}</div>
+                    </div>
+                    
+                    <p><small>Assessment ID: ${data.assessment_id}</small></p>
+                    <p><small>Completed: ${new Date(data.timestamp).toLocaleString()}</small></p>
+                    
+                    <br>
+                    <button class="btn" onclick="location.reload()">Take Another Assessment</button>
+                `;
+            }
+        </script>
+    </body>
+    </html>
+    """
 
 @app.get("/health")
 async def health_check():
